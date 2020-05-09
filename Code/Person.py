@@ -1,5 +1,4 @@
 import random
-import time
 import Data.Persons_data
 
 
@@ -21,7 +20,6 @@ LIMIT_CONTROL, LIMIT_STRESS = 100, 100
 LIMIT_HP, LIMIT_HUNGER, LIMIT_WATER = 100, 100, 100
 LIMIT_BUFF, LIMIT_DE_BUFF = 3, 3
 LIMIT_SPECIAL = 3
-TIME_SECONDS = 2
 
 
 class Action:
@@ -209,9 +207,8 @@ class Son:
         self.surname = SURNAME
         return self.surname
 
-    def set_age(self, mam, dad):
-        temp = [mam - 19, dad - 20]
-        temp.sort()
+    def set_age(self, mam):
+        temp = [1, mam - 19]
         self.age = random.randint(*temp)
         return self.age
 
@@ -233,10 +230,10 @@ class Son:
         self.buff = set()
         return self.buff
 
-    def __init__(self, age_mom, age_dad):
+    def __init__(self, age_mom):
         """данные"""
         self.name, self.surname = Son.set_name(self), Son.set_surname(self)
-        self.age = Son.set_age(self, age_mom, age_dad)
+        self.age = Son.set_age(self, age_mom)
         self.special, self.skills = Son.set_special(self), set()
         self.buff, self.de_buff = Son.set_buff(self), Son.set_de_buff(self)
         """значения"""
@@ -253,9 +250,8 @@ class Daughter:
         self.surname = SURNAME
         return self.surname
 
-    def set_age(self, mam, dad):
-        temp = [mam - 19, dad - 20]
-        temp.sort()
+    def set_age(self, mam):
+        temp = [1, mam - 19]
         self.age = random.randint(*temp)
         return self.age
 
@@ -277,10 +273,10 @@ class Daughter:
         self.buff = set()
         return self.buff
 
-    def __init__(self, age_mom, age_dad):
+    def __init__(self, age_mom):
         """данные"""
         self.name, self.surname = Daughter.set_name(self), Daughter.set_surname(self)
-        self.age = Daughter.set_age(self, age_mom, age_dad)
+        self.age = Daughter.set_age(self, age_mom)
         self.special, self.skills = Daughter.set_special(self), set()
         self.buff, self.de_buff = Daughter.set_buff(self), Daughter.set_de_buff(self)
         """значения"""
@@ -292,8 +288,8 @@ class Data_pers:
     def __init__(self):
         self.mom = Mom()
         self.dad = Dad()
-        self.son = Son(self.mom.age, self.dad.age)
-        self.dau = Daughter(self.mom.age, self.dad.age)
+        self.son = Son(self.mom.age)
+        self.dau = Daughter(self.mom.age)
 
     def info(self, pers=None):
         var = {'mom': self.mom, 'dad': self.dad, 'son': self.son, 'dau': self.dau}
