@@ -9,15 +9,14 @@ NAME_D_LIST = Data.Persons_data.names_d
 SURNAME = random.choice(Data.Persons_data.surname)
 
 """Ивенты персонажей"""
-PERSON_EVENTS = ['fracture']
+PERSON_EVENTS = Data.Persons_data.PERSON_EVENTS
 PERSON_EVENTS_PRINT = Data.Persons_data.PERSON_EVENTS_PRINT
 
 """Особенности персонажей"""
-SPECIAL_BASE = [['smart', 'stupid'], ['light sleep'], ['strong', 'frail'], ['glutton']]
+SPECIAL_BASE = Data.Persons_data.SPECIAL_BASE
 SPECIAL_BASE_PRINT = Data.Persons_data.SPECIAL_BASE_PRINT
 
 """Основные параметры"""
-RAND_SEED = random.randint(0, 100)
 LIMIT_CONTROL, LIMIT_STRESS = 100, 100
 LIMIT_HP, LIMIT_HUNGER, LIMIT_WATER = 100, 100, 100
 LIMIT_BUFF, LIMIT_DE_BUFF = 3, 3
@@ -30,6 +29,8 @@ class Action:
         self.pers = pers
 
     def damage(self, dmg):
+        if not Action.is_live(self):
+            return False
         self.pers.hp -= dmg
         # Лимит.
         self.pers.hp = 0 if self.pers.hp < 0 else self.pers.hp
@@ -37,9 +38,12 @@ class Action:
     def is_live(self):
         if self.pers.hp > 0:
             return True
+        print('Персонаж мёртв.')
         return False
 
     def eat(self, hunger):
+        if not Action.is_live(self):
+            return False
         self.pers.hunger += hunger
         # Лимит.
         if self.pers.hunger > 60 and (self.pers.hunger < 100):
@@ -53,6 +57,8 @@ class Action:
             self.pers.hunger = 100
 
     def left_hunger(self, hunger):
+        if not Action.is_live(self):
+            return False
         self.pers.hunger -= hunger
         if self.pers.hunger < 0:
             self.pers.damage(abs(self.pers.hunger))
@@ -61,11 +67,15 @@ class Action:
             self.pers.hunger = 0
 
     def drink(self, water):
+        if not Action.is_live(self):
+            return False
         self.pers.water += water
         # Лимит.
         self.pers.water = LIMIT_WATER if self.pers.water > LIMIT_WATER else self.pers.water
 
     def left_water(self, water):
+        if not Action.is_live(self):
+            return False
         self.pers.water -= water
         if self.pers.water < 0:
             self.pers.damage(2 * abs(self.pers.water))
@@ -74,6 +84,8 @@ class Action:
             self.pers.water = 0
 
     def get_stress(self, stress_points):
+        if not Action.is_live(self):
+            return False
         self.pers.stress -= stress_points
         if self.pers.control < 0:
             self.pers.damage(int(0.5 * abs(self.pers.stress)))
@@ -82,17 +94,23 @@ class Action:
             self.pers.control = 0
 
     def relax(self, relax_points):
+        if not Action.is_live(self):
+            return False
         self.pers.control += relax_points
         # Лимит.
         self.pers.control = LIMIT_STRESS if self.pers.control > LIMIT_STRESS else self.pers.control
 
     def add_buff(self, buffs):
+        if not Action.is_live(self):
+            return False
         if len(self.pers.buff) < LIMIT_BUFF:
             self.pers.buff.add(buffs)
         else:
             print('Количество бафов максимально')
 
     def add_de_buff(self, de_buffs):
+        if not Action.is_live(self):
+            return False
         if len(self.pers.de_buff) < LIMIT_DE_BUFF:
             self.pers.de_buff.add(de_buffs)
             print(f'{PERSON_EVENTS_PRINT[de_buffs]}')
@@ -138,7 +156,7 @@ class Mom:
         self.buff, self.de_buff = Mom.set_buff(self), Mom.set_de_buff(self)
         """значения"""
         self.control, self.hunger, self.water = LIMIT_CONTROL, LIMIT_HUNGER, LIMIT_WATER
-        self.hp, self.stress = LIMIT_HP, LIMIT_STRESS
+        self.hp, self.stress = LIMIT_HP, random.randint(0, 30)
 
 
 class Dad:
@@ -179,7 +197,7 @@ class Dad:
         self.buff, self.de_buff = Dad.set_buff(self), Dad.set_de_buff(self)
         """значения"""
         self.control, self.hunger, self.water = LIMIT_CONTROL, LIMIT_HUNGER, LIMIT_WATER
-        self.hp, self.stress = LIMIT_HP, LIMIT_STRESS
+        self.hp, self.stress = LIMIT_HP, random.randint(0, 30)
 
 
 class Son:
@@ -223,7 +241,7 @@ class Son:
         self.buff, self.de_buff = Son.set_buff(self), Son.set_de_buff(self)
         """значения"""
         self.control, self.hunger, self.water = LIMIT_CONTROL, LIMIT_HUNGER, LIMIT_WATER
-        self.hp, self.stress = LIMIT_HP, LIMIT_STRESS
+        self.hp, self.stress = LIMIT_HP, random.randint(0, 20)
 
 
 class Daughter:
@@ -267,29 +285,39 @@ class Daughter:
         self.buff, self.de_buff = Daughter.set_buff(self), Daughter.set_de_buff(self)
         """значения"""
         self.control, self.hunger, self.water = LIMIT_CONTROL, LIMIT_HUNGER, LIMIT_WATER
-        self.hp, self.stress = LIMIT_HP, LIMIT_STRESS
+        self.hp, self.stress = LIMIT_HP, random.randint(0, 20)
 
 
 class Data_pers:
-    mom = Mom()
-    dad = Dad()
-    son = Son(mom.age, dad.age)
-    dau = Daughter(mom.age, dad.age)
+    def __init__(self):
+        self.mom = Mom()
+        self.dad = Dad()
+        self.son = Son(self.mom.age, self.dad.age)
+        self.dau = Daughter(self.mom.age, self.dad.age)
 
+    def info(self, pers=None):
+        var = {'mom': self.mom, 'dad': self.dad, 'son': self.son, 'dau': self.dau}
+        if pers is None:
+            pers = input('Введите, чтобы получить статистику(mom, dad, dau, son). '
+                         'Или нажмите {enter}, чтобы не выводить статисику.\n')
+        if pers in ['mom', 'dad', 'son', 'dau']:
+            v = (f'Статистика персонажа {pers}:\n\tИмя: {var[pers].name}\n\tФамилия: {var[pers].surname}\n\t'
+                 f'Возраст: {var[pers].age}\n\tОсобенности:\n\t\t')
+            v += '\n\t\t'.join([SPECIAL_BASE_PRINT[i] for i in list(var[pers].special)])
+            v += f'\n\tУмения:\n\t\t{var[pers].skills}\n\tБафы:\n\t\t'
+            v += '\n\t\t'.join([PERSON_EVENTS_PRINT[i] for i in list(var[pers].buff)])
+            v += f'\n\tДебафы:\n\t\t{var[pers].de_buff}\n\tХП: {var[pers].hp}'
+            v += f'\n\tКоличество еды: {var[pers].hunger}\n\tКоличество воды: {var[pers].water}\n\t'
+            v += f'Контроль: {var[pers].control}\n\tСтресс: {var[pers].stress}'
+            print(v)
+        return ''
 
-def info(data):
-    var = {'mom': data.mom, 'dad': data.dad, 'son': data.son, 'dau': data.dau}
-    pers = input('Введите, чтобы получить статистику(mom, dad, dau, son). '
-                 'Или нажмите {enter}, чтобы не выводить статисику.\n')
-    if pers is ['mom', 'dad', 'son', 'dau']:
-        v = (f'Статистика персонажа {pers}:\n\tИмя: {var[pers].name}\n\tФамилия: {var[pers].surname}\n\t'
-             f'Возраст: {var[pers].age}\n\tОсобенности:\n\t\t')
-        v += '\n\t\t'.join([SPECIAL_BASE_PRINT[i] for i in list(var[pers].special)])
-        v += f'\n\tУмения: {var[pers].skills}\n\tБафы:\n\t\t'
-        v += '\n\t\t'.join([PERSON_EVENTS_PRINT[i] for i in list(var[pers].buff)])
-        v += f'\n\tДебафы: {var[pers].de_buff}'
-        print(v)
-
-
-if __name__ == '__main__':
-    persons = Data_pers()
+    def __repr__(self):
+        Data_pers.info(self, 'mom')
+        print('---------------')
+        Data_pers.info(self, 'dad')
+        print('---------------')
+        Data_pers.info(self, 'son')
+        print('---------------')
+        Data_pers.info(self, 'dau')
+        return '---------------'
