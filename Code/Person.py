@@ -25,95 +25,82 @@ LIMIT_SPECIAL = 3
 TIME_SECONDS = 2
 
 
-class Person:
-    """ Персонажи. """
-
-    def __init__(self, name: str = 'Имя', surname: str = 'фамилия', age: int = 0,
-                 special: set = set(), skills: set = set(), buff: set = set(), de_buff: set = set()):
-        """ Конструктор. """
-        self.name, self.surname, self.age = name, surname, age
-        self.control,  self.hunger, self.water = LIMIT_CONTROL, LIMIT_HUNGER, LIMIT_WATER
-        self.hp, self.stress = LIMIT_HP, LIMIT_STRESS
-        self.skills, self.special = skills, special
-        self.buff, self.de_buff = buff, de_buff
-        self.temp = []
+class Action:
+    def __init__(self, pers):
+        self.pers = pers
 
     def damage(self, dmg):
-        """ Урон. """
-        self.hp -= dmg
+        self.pers.hp -= dmg
         # Лимит.
-        self.hp = 0 if self.hp < 0 else self.hp
+        self.pers.hp = 0 if self.pers.hp < 0 else self.pers.hp
+
+    def is_live(self):
+        if self.pers.hp > 0:
+            return True
+        return False
 
     def eat(self, hunger):
-        """ Есть. """
-        self.hunger += hunger
+        self.pers.hunger += hunger
         # Лимит.
-        if self.hunger > 60 and (self.hunger < 100):
+        if self.pers.hunger > 60 and (self.pers.hunger < 100):
             # сытость
             print(PERSON_EVENTS_PRINT['full_eat'])
-            Person.add_buff(self, 'full_eat')
-        elif self.hunger > 100:
+            Action.add_buff(self, 'full_eat')
+        elif self.pers.hunger > 100:
             # объелся
             print(PERSON_EVENTS_PRINT['overeaten'])
-            Person.add_de_buff(self, 'overeaten')
-            self.hunger = 100
+            Action.add_de_buff(self, 'overeaten')
+            self.pers.hunger = 100
 
     def left_hunger(self, hunger):
-        """ Голодать. """
-        self.hunger -= hunger
-        if self.hunger < 0:
-            self.damage(abs(self.hunger))
-            if Person.is_live(self) is False:
-                print(f'Персонаж погиб в результате голода.')
-            self.hunger = 0
+        self.pers.hunger -= hunger
+        if self.pers.hunger < 0:
+            self.pers.damage(abs(self.pers.hunger))
+            if Action.is_live(self) is False:
+                print(f'Персонаж погиб из-за голода.')
+            self.pers.hunger = 0
 
     def drink(self, water):
-        """ Пить."""
-        self.water += water
+        self.pers.water += water
         # Лимит.
-        self.water = self.WATER_LIMIT if self.water > self.WATER_LIMIT else self.water
+        self.pers.water = LIMIT_WATER if self.pers.water > LIMIT_WATER else self.pers.water
 
     def left_water(self, water):
-        """ Жажда. """
-        self.water -= water
-        if self.water < 0:
-            self.damage(2 * abs(self.water))
-            if Person.is_live(self) is False:
-                print(f'Персонаж погиб в результате жажды.')
-            self.water = 0
+        self.pers.water -= water
+        if self.pers.water < 0:
+            self.pers.damage(2 * abs(self.pers.water))
+            if Action.is_live(self) is False:
+                print(f'Персонаж погиб из-за жажды.')
+            self.pers.water = 0
 
     def get_stress(self, stress_points):
-        """ Стресс. """
-        self.stress -= stress_points
-        if self.control < 0:
-            self.damage(int(0.5 * abs(self.stress)))
-            if Person.is_live(self) is False:
-                print(f'Персонаж погиб в результате стресса.')
-            self.control = 0
+        self.pers.stress -= stress_points
+        if self.pers.control < 0:
+            self.pers.damage(int(0.5 * abs(self.pers.stress)))
+            if Action.is_live(self) is False:
+                print(f'Персонаж погиб из-за стресса.')
+            self.pers.control = 0
 
     def relax(self, relax_points):
-        """ Отдых. """
-        self.control += relax_points
+        self.pers.control += relax_points
         # Лимит.
-        self.control = self.STRESS_LIMIT if self.control > self.STRESS_LIMIT else self.control
+        self.pers.control = LIMIT_STRESS if self.pers.control > LIMIT_STRESS else self.pers.control
 
     def add_buff(self, buffs):
-        """ Добавление бафа. """
-        if len(self.buff) < LIMIT_BUFF:
-            self.buff.append(buffs)
+        if len(self.pers.buff) < LIMIT_BUFF:
+            self.pers.buff.add(buffs)
         else:
             print('Количество бафов максимально')
 
     def add_de_buff(self, de_buffs):
-        """ Добавление дебафа."""
-        if len(self.de_buff) < LIMIT_DE_BUFF:
-            self.de_buff.add(de_buffs)
+        if len(self.pers.de_buff) < LIMIT_DE_BUFF:
+            self.pers.de_buff.add(de_buffs)
             print(f'{PERSON_EVENTS_PRINT[de_buffs]}')
         else:
             print('Количество дебафов максимально')
 
 
-class Mom(Person):
+class Mom:
     def set_name(self):
         self.name = random.choice(NAME_D_LIST)
         return self.name
@@ -145,13 +132,16 @@ class Mom(Person):
         return self.buff
 
     def __init__(self):
+        """данные"""
         self.name, self.surname, self.age = Mom.set_name(self), Mom.set_surname(self), Mom.set_age(self)
         self.special, self.skills = Mom.set_special(self), set()
         self.buff, self.de_buff = Mom.set_buff(self), Mom.set_de_buff(self)
-        super().__init__(self.name, self.surname, self.age, self.special, self.skills, self.buff, self.de_buff)
+        """значения"""
+        self.control, self.hunger, self.water = LIMIT_CONTROL, LIMIT_HUNGER, LIMIT_WATER
+        self.hp, self.stress = LIMIT_HP, LIMIT_STRESS
 
 
-class Dad(Person):
+class Dad:
     def set_name(self):
         self.name = random.choice(NAME_M_LIST)
         return self.name
@@ -183,13 +173,16 @@ class Dad(Person):
         return self.buff
 
     def __init__(self):
+        """данные"""
         self.name, self.surname, self.age = Dad.set_name(self), Dad.set_surname(self), Dad.set_age(self)
         self.special, self.skills = Dad.set_special(self), set()
         self.buff, self.de_buff = Dad.set_buff(self), Dad.set_de_buff(self)
-        super().__init__(self.name, self.surname, self.age, self.special, self.skills, self.buff, self.de_buff)
+        """значения"""
+        self.control, self.hunger, self.water = LIMIT_CONTROL, LIMIT_HUNGER, LIMIT_WATER
+        self.hp, self.stress = LIMIT_HP, LIMIT_STRESS
 
 
-class Son(Person):
+class Son:
     def set_name(self):
         self.name = random.choice(NAME_M_LIST)
         return self.name
@@ -222,14 +215,18 @@ class Son(Person):
         self.buff = set()
         return self.buff
 
-    def __init__(self):
-        self.name, self.surname, self.age = Son.set_name(self), Son.set_surname(self), 0
+    def __init__(self, age_mom, age_dad):
+        """данные"""
+        self.name, self.surname = Son.set_name(self), Son.set_surname(self)
+        self.age = Son.set_age(self, age_mom, age_dad)
         self.special, self.skills = Son.set_special(self), set()
         self.buff, self.de_buff = Son.set_buff(self), Son.set_de_buff(self)
-        super().__init__(self.name, self.surname, self.age, self.special, self.skills, self.buff, self.de_buff)
+        """значения"""
+        self.control, self.hunger, self.water = LIMIT_CONTROL, LIMIT_HUNGER, LIMIT_WATER
+        self.hp, self.stress = LIMIT_HP, LIMIT_STRESS
 
 
-class Daughter(Person):
+class Daughter:
     def set_name(self):
         self.name = random.choice(NAME_D_LIST)
         return self.name
@@ -262,38 +259,29 @@ class Daughter(Person):
         self.buff = set()
         return self.buff
 
-    def __init__(self):
-        self.name, self.surname, self.age = Daughter.set_name(self), Daughter.set_surname(self), 0
+    def __init__(self, age_mom, age_dad):
+        """данные"""
+        self.name, self.surname = Daughter.set_name(self), Daughter.set_surname(self)
+        self.age = Daughter.set_age(self, age_mom, age_dad)
         self.special, self.skills = Daughter.set_special(self), set()
         self.buff, self.de_buff = Daughter.set_buff(self), Daughter.set_de_buff(self)
-        super().__init__(self.name, self.surname, self.age, self.special, self.skills, self.buff, self.de_buff)
+        """значения"""
+        self.control, self.hunger, self.water = LIMIT_CONTROL, LIMIT_HUNGER, LIMIT_WATER
+        self.hp, self.stress = LIMIT_HP, LIMIT_STRESS
 
 
-def events_time():
-    """Проходит день."""
-    for i in range(1, 13):
-        if random.randint(1, 4) == 3:
-            event = random.choice(PERSON_EVENTS)
-            print(f'Сейчас {i} час. Выпало {event}')
-            # дебаф добовляем персанажу Mom
-            print(Person(*Mom().main()).add_de_buff(event))
-        time.sleep(TIME_SECONDS)
-
-
-class Gen:
-    mam = Mom()
+class Data_pers:
+    mom = Mom()
     dad = Dad()
-    dau = Daughter()
-    son = Son()
-    son.set_age(mam.age, dad.age)
-    dau.set_age(mam.age, dad.age)
+    son = Son(mom.age, dad.age)
+    dau = Daughter(mom.age, dad.age)
 
 
-def info(ge):
-    var = {'mam': ge.mam, 'dad': ge.dad, 'dau': ge.dau, 'son': ge.son}
-    pers = input('Введите, чтобы получить статистику(mam, dad, dau, son). '
+def info(data):
+    var = {'mom': data.mom, 'dad': data.dad, 'son': data.son, 'dau': data.dau}
+    pers = input('Введите, чтобы получить статистику(mom, dad, dau, son). '
                  'Или нажмите {enter}, чтобы не выводить статисику.\n')
-    if pers != '':
+    if pers is ['mom', 'dad', 'son', 'dau']:
         v = (f'Статистика персонажа {pers}:\n\tИмя: {var[pers].name}\n\tФамилия: {var[pers].surname}\n\t'
              f'Возраст: {var[pers].age}\n\tОсобенности:\n\t\t')
         v += '\n\t\t'.join([SPECIAL_BASE_PRINT[i] for i in list(var[pers].special)])
@@ -304,9 +292,4 @@ def info(ge):
 
 
 if __name__ == '__main__':
-    g = Gen()
-    info(g)
-    info(g)
-    info(g)
-    info(g)
-    info(g)
+    persons = Data_pers()
