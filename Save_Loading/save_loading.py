@@ -3,30 +3,31 @@ from Code.Person import Data_pers
 
 def save(data_save):
     f = open('Save_Loading/save.text', 'w')
-    var = {'mom': data_save.mom, 'dad': data_save.dad, 'son': data_save.son, 'dau': data_save.dau}
-    for pers in ['mom', 'dad', 'son', 'dau']:
-        f.write(f'{var[pers].name}/{var[pers].surname}/{var[pers].age}/')
-        for i in [var[pers].special, var[pers].skills, var[pers].buff, var[pers].de_buff]:
+    for pers in data_save.personalities:
+        f.write(f'{pers.name}/{pers.surname}/{pers.age}/')
+        for i in [pers.special, pers.skills, pers.buff, pers.de_buff]:
             temp = '|'.join(i)
             temp = 'NONE' if len(temp) == 0 else temp
             f.write(f'{temp}/')
-        f.write(f'{var[pers].hp}/{var[pers].hunger}/{var[pers].water}/')
-        f.write(f'{var[pers].control}/{var[pers].stress}//')
+        f.write(f'{pers.hp}/{pers.hunger}/{pers.water}/')
+        f.write(f'{pers.control}/{pers.stress}//')
     f.close()
 
 
 def load():
-    data = Data_pers()
-    var = {0: data.mom, 1: data.dad, 2: data.son, 3: data.dau}
     f = open('Save_Loading/save.text', 'r')
     data_load = f.read().split('//')
-    for line in range(4):
+    data = Data_pers(len(data_load[:-1]))
+    for line in range(len(data_load[:-1])):
         data_pers = data_load[line].split('/')
-        var[line].name, var[line].surname, var[line].age = data_pers[0], data_pers[1], data_pers[2]
-        t = [var[line].special, var[line].skills, var[line].buff, var[line].de_buff]
+        data.personalities[line].name, data.personalities[line].surname = data_pers[0], data_pers[1]
+        data.personalities[line].age = data_pers[2]
+        t = [data.personalities[line].special, data.personalities[line].skills,
+             data.personalities[line].buff, data.personalities[line].de_buff]
         for i in range(4):
             t[i] = set(data_pers[i + 3].split('|')) if data_pers[i + 3] != 'NONE' else set()
-        var[line].hp, var[line].hunger, var[line].water = data_pers[7], data_pers[8], data_pers[9]
-        var[line].control, var[line].stress = data_pers[10], data_pers[11]
+        data.personalities[line].hp, data.personalities[line].hunger = data_pers[7], data_pers[8]
+        data.personalities[line].water = data_pers[9]
+        data.personalities[line].control, data.personalities[line].stress = data_pers[10], data_pers[11]
     f.close()
     return data

@@ -23,6 +23,8 @@ def home_screen():
         f.close()
 
 
-persons = None
-home_screen()
+persons = Data_pers()
+print(persons)
+save(persons)
+persons = load()
 print(persons)
