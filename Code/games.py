@@ -25,5 +25,4 @@ def home_screen():
 
 persons = None
 home_screen()
-home_screen()
-print(persons.mom.age)
+print(persons)
