@@ -4,7 +4,7 @@ from Save_Loading.save_loading import save, load
 
 def home_screen():
     global persons
-    text = input('new game/save game/load game\n')
+    text = input('new game/save game/load game/out\n')
     if text == 'new game':
         persons = Data_pers()
     elif text == 'save game':
@@ -21,10 +21,10 @@ def home_screen():
             persons = load()
             print('Игра загружена.')
         f.close()
+    elif text == 'out':
+        print(persons)
 
 
-persons = Data_pers()
-print(persons)
-save(persons)
-persons = load()
-print(persons)
+persons = None
+while True:
+    home_screen()
