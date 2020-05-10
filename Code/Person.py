@@ -1,19 +1,19 @@
 import random
-import Data.Persons_data
+import Data.person_data
 
 
 """Имена и фамилии"""
-NAME_M_LIST = Data.Persons_data.names_m
-NAME_D_LIST = Data.Persons_data.names_d
-SURNAME = random.choice(Data.Persons_data.surname)
+NAME_M_LIST = Data.person_data.names_m
+NAME_D_LIST = Data.person_data.names_d
+SURNAME = random.choice(Data.person_data.surname)
 
 """Ивенты персонажей"""
-PERSON_EVENTS = Data.Persons_data.PERSON_EVENTS
-PERSON_EVENTS_PRINT = Data.Persons_data.PERSON_EVENTS_PRINT
+PERSON_EVENTS = Data.person_data.PERSON_EVENTS
+PERSON_EVENTS_PRINT = Data.person_data.PERSON_EVENTS_PRINT
 
 """Особенности персонажей"""
-SPECIAL_BASE = Data.Persons_data.SPECIAL_BASE
-SPECIAL_BASE_PRINT = Data.Persons_data.SPECIAL_BASE_PRINT
+SPECIAL_BASE = Data.person_data.SPECIAL_BASE
+SPECIAL_BASE_PRINT = Data.person_data.SPECIAL_BASE_PRINT
 
 """Основные параметры"""
 LIMIT_CONTROL, LIMIT_STRESS = 100, 100
