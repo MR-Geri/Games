@@ -10,7 +10,10 @@ def save(data_save):
             temp = 'NONE' if len(temp) == 0 else temp
             f.write(f'{temp}/')
         f.write(f'{pers.hp}/{pers.hunger}/{pers.water}/')
-        f.write(f'{pers.control}/{pers.stress}//')
+        f.write(f'{pers.control}/{pers.stress}/')
+        f.write(f'{pers.left_arm}/{pers.right_arm}/{pers.back}/')
+        f.write('|'.join([i if i is not None else 'None' for i in pers.pockets]))
+        f.write(f'//')
     f.close()
 
 
@@ -29,5 +32,11 @@ def load():
         data.personalities[line].hp, data.personalities[line].hunger = data_pers[7], data_pers[8]
         data.personalities[line].water = data_pers[9]
         data.personalities[line].control, data.personalities[line].stress = data_pers[10], data_pers[11]
+        data.personalities[line].left_arm = None if data_pers[12] == 'None' else data_pers[12]
+        data.personalities[line].right_arm = None if data_pers[13] == 'None' else data_pers[13]
+        data.personalities[line].back = None if data_pers[14] == 'None' else data_pers[14]
+        for i in range(4):
+            data.personalities[line].pockets[i] = None if data_pers[15].split('|')[i] == 'None' else \
+                data_pers[15].split('|')[i]
     f.close()
     return data

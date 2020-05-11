@@ -160,7 +160,6 @@ class Personage:
         """значения"""
         self.control, self.hunger, self.water = LIMIT_CONTROL, LIMIT_HUNGER, LIMIT_WATER
         self.hp, self.stress = LIMIT_HP, random.randint(0, 30)
-        # pockets(4маленьких предмета), left arm, right arm, back
         self.pockets = [None, None, None, None]
         self.left_arm, self.right_arm, self.back = None, None, None
 
@@ -199,13 +198,12 @@ class Data_pers:
                     t.append(i)
             pockets = ''.join(['пусто'] if ''.join([ITEMS_PRINT[i] for i in t]) == '' else
                               [', '.join([ITEMS_PRINT[i] for i in t])])
-            v = f'{temp.name} {temp.surname}:\n\tВозраст: {temp.age}\n\t' \
-                f'Здоровье: {temp.hp}\n\tКоличество еды: {temp.hunger}\n\t' \
-                f'Контроль: {temp.control}\n\tСтресс: {temp.stress}\n\tОсобенности:\n\t\t{special}' \
-                f'\n\tУмения:\n\t\t{skills}\n\tБафы:\n\t\t{buff}\n\tДебафы:\n\t\t{de_buff}\n\t' \
-                f'В левой руке {left_arm}\n\tВ правой руке {right_arm}' \
-                f'\n\tЗа спиной {back}\n\tВ карманах {pockets}'
-            print(v)
+            print(f'{temp.name} {temp.surname}:\n\tВозраст: {temp.age}\n\t'
+                  f'Здоровье: {temp.hp}\n\tКоличество еды: {temp.hunger}\n\t'
+                  f'Контроль: {temp.control}\n\tСтресс: {temp.stress}\n\tОсобенности:\n\t\t{special}'
+                  f'\n\tУмения:\n\t\t{skills}\n\tБафы:\n\t\t{buff}\n\tДебафы:\n\t\t{de_buff}\n\t'
+                  f'В левой руке {left_arm}\n\tВ правой руке {right_arm}'
+                  f'\n\tЗа спиной {back}\n\tВ карманах {pockets}')
         return '---------------'
 
     def __repr__(self):
