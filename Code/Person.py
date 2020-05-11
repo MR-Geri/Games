@@ -1,19 +1,22 @@
 import random
-import Data.person_data
+import Data.file_data
 
 
 """Имена и фамилии"""
-NAME_M_LIST = Data.person_data.names_m
-NAME_D_LIST = Data.person_data.names_d
-SURNAME_LIST = Data.person_data.surname
+NAME_M_LIST = Data.file_data.names_m
+NAME_D_LIST = Data.file_data.names_d
+SURNAME_LIST = Data.file_data.surname
 
-"""Ивенты персонажей"""
-PERSON_EVENTS = Data.person_data.PERSON_EVENTS
-PERSON_EVENTS_PRINT = Data.person_data.PERSON_EVENTS_PRINT
+"""Бафы и дебафы персонажей"""
+PERSON_EVENTS = Data.file_data.PERSON_EVENTS
+PERSON_EVENTS_PRINT = Data.file_data.PERSON_EVENTS_PRINT
 
 """Особенности персонажей"""
-SPECIAL_BASE = Data.person_data.SPECIAL_BASE
-SPECIAL_BASE_PRINT = Data.person_data.SPECIAL_BASE_PRINT
+SPECIAL_BASE = Data.file_data.SPECIAL_BASE
+SPECIAL_BASE_PRINT = Data.file_data.SPECIAL_BASE_PRINT
+
+"""Предметы"""
+ITEMS_PRINT = Data.file_data.ITEMS_PRINT
 
 """Основные параметры"""
 LIMIT_CONTROL, LIMIT_STRESS = 100, 100
@@ -144,8 +147,9 @@ class Personage:
         return self.buff
 
     def set_de_buff(self):
-        self.buff = set()
-        return self.buff
+        self.de_buff = set()
+        self.de_buff.add('fracture')
+        return self.de_buff
 
     def __init__(self):
         """данные"""
@@ -156,13 +160,19 @@ class Personage:
         """значения"""
         self.control, self.hunger, self.water = LIMIT_CONTROL, LIMIT_HUNGER, LIMIT_WATER
         self.hp, self.stress = LIMIT_HP, random.randint(0, 30)
+        # pockets(4маленьких предмета), left arm, right arm, back
+        self.pockets = [None, None, None, None]
+        self.left_arm, self.right_arm, self.back = None, None, None
 
 
 class Data_pers:
     def __init__(self, flag=None):
         self.personalities = []
         flag = int(input('Сценарий:\n')) if flag is None else flag
-        for i in range(flag):
+        self.personalities.append(Personage())
+        self.personalities[0].back = Data.file_data.BACKPACK[0][0]
+        self.personalities[0].pockets[0] = Data.file_data.SMALL_OBJECT[0][0]
+        for i in range(1, flag):
             self.personalities.append(Personage())
 
     def info(self, pers=None):
@@ -170,16 +180,31 @@ class Data_pers:
             pers = int(input(f'Введите, чтобы получить статистику. Число от 0 до {len(self.personalities)}'
                              f' Или нажмите enter, чтобы не выводить статисику.\n'))
         if pers >= 0 or pers < len(self.personalities):
-            v = (f'Статистика персонажа {pers}:\n\tИмя: {self.personalities[pers].name}\n\t'
-                 f'Фамилия: {self.personalities[pers].surname}\n\t'
-                 f'Возраст: {self.personalities[pers].age}\n\tОсобенности:\n\t\t')
-            v += '\n\t\t'.join([SPECIAL_BASE_PRINT[i] for i in list(self.personalities[pers].special)])
-            v += f'\n\tУмения:\n\t\t{self.personalities[pers].skills}\n\tБафы:\n\t\t'
-            v += '\n\t\t'.join([PERSON_EVENTS_PRINT[i] for i in list(self.personalities[pers].buff)])
-            v += f'\n\tДебафы:\n\t\t{self.personalities[pers].de_buff}\n\tХП: {self.personalities[pers].hp}'
-            v += f'\n\tКоличество еды: {self.personalities[pers].hunger}\n\t' \
-                 f'Количество воды: {self.personalities[pers].water}\n\t' \
-                 f'Контроль: {self.personalities[pers].control}\n\tСтресс: {self.personalities[pers].stress}'
+            temp = self.personalities[pers]
+            special = 'нет' if temp.special == set() else \
+                '\n\t\t'.join([SPECIAL_BASE_PRINT[i] for i in list(temp.special)])
+            skills = 'нет' if temp.skills == set() else \
+                '\n\t\t'.join([SPECIAL_BASE_PRINT[i] for i in list(temp.skills)])
+            buff = 'нет' if temp.buff == set() else \
+                '\n\t\t'.join([PERSON_EVENTS_PRINT[i] for i in list(temp.buff)])
+            de_buff = 'нет' if temp.skills == set() else \
+                '\n\t\t'.join([PERSON_EVENTS_PRINT[i] for i in list(temp.de_buff)])
+
+            left_arm = 'пусто' if temp.left_arm is None else ITEMS_PRINT[temp.left_arm]
+            right_arm = 'пусто' if temp.right_arm is None else ITEMS_PRINT[temp.right_arm]
+            back = 'пусто' if temp.back is None else ITEMS_PRINT[temp.back]
+            t = []
+            for i in temp.pockets:
+                if i is not None:
+                    t.append(i)
+            pockets = ''.join(['пусто'] if ''.join([ITEMS_PRINT[i] for i in t]) == '' else
+                              [', '.join([ITEMS_PRINT[i] for i in t])])
+            v = f'{temp.name} {temp.surname}:\n\tВозраст: {temp.age}\n\t' \
+                f'Здоровье: {temp.hp}\n\tКоличество еды: {temp.hunger}\n\t' \
+                f'Контроль: {temp.control}\n\tСтресс: {temp.stress}\n\tОсобенности:\n\t\t{special}' \
+                f'\n\tУмения:\n\t\t{skills}\n\tБафы:\n\t\t{buff}\n\tДебафы:\n\t\t{de_buff}\n\t' \
+                f'В левой руке {left_arm}\n\tВ правой руке {right_arm}' \
+                f'\n\tЗа спиной {back}\n\tВ карманах {pockets}'
             print(v)
         return '---------------'
 
