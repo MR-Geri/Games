@@ -15,9 +15,6 @@ PERSON_EVENTS_PRINT = Data.file_data.PERSON_EVENTS_PRINT
 SPECIAL_BASE = Data.file_data.SPECIAL_BASE
 SPECIAL_BASE_PRINT = Data.file_data.SPECIAL_BASE_PRINT
 
-"""Предметы"""
-ITEMS_PRINT = Data.file_data.ITEMS_PRINT
-
 """Основные параметры"""
 LIMIT_CONTROL, LIMIT_STRESS = 100, 100
 LIMIT_HP, LIMIT_HUNGER, LIMIT_WATER = 100, 100, 100
@@ -165,14 +162,17 @@ class Personage:
 
 
 class Data_pers:
+    PRESET = '1. Вы одиночка, с запасом самого необходимого, для выживания.\n'
+
     def __init__(self, flag=None):
         self.personalities = []
-        flag = int(input('Сценарий:\n')) if flag is None else flag
-        self.personalities.append(Personage())
-        self.personalities[0].back = Data.file_data.BACKPACK[0][0]
-        self.personalities[0].pockets[0] = Data.file_data.SMALL_OBJECT[0][0]
-        for i in range(1, flag):
+        print(f'Выберите один из сценариев:\n\t{Data_pers.PRESET}')
+        flag = int(input('Сценарий номер:\n')) if flag is None else flag
+        if flag == 1:
             self.personalities.append(Personage())
+            self.personalities[0].right_arm = Data.file_data.AXE[0]
+            self.personalities[0].pockets[0] = Data.file_data.SMALL_OBJECT[0]
+            self.personalities[0].pockets[1] = Data.file_data.SMALL_OBJECT[1]
 
     def info(self, pers=None):
         if pers is None:
@@ -189,21 +189,21 @@ class Data_pers:
             de_buff = 'нет' if temp.skills == set() else \
                 '\n\t\t'.join([PERSON_EVENTS_PRINT[i] for i in list(temp.de_buff)])
 
-            left_arm = 'пусто' if temp.left_arm is None else ITEMS_PRINT[temp.left_arm]
-            right_arm = 'пусто' if temp.right_arm is None else ITEMS_PRINT[temp.right_arm]
-            back = 'пусто' if temp.back is None else ITEMS_PRINT[temp.back]
+            left_arm = 'пусто' if temp.left_arm is None else temp.left_arm[0]
+            right_arm = 'пусто' if temp.right_arm is None else temp.right_arm[0]
+            back = 'пусто' if temp.back is None else temp.back[0]
             t = []
             for i in temp.pockets:
                 if i is not None:
-                    t.append(i)
-            pockets = ''.join(['пусто'] if ''.join([ITEMS_PRINT[i] for i in t]) == '' else
-                              [', '.join([ITEMS_PRINT[i] for i in t])])
+                    t.append(i[0])
+            pockets = ''.join(['пусто'] if ''.join([i for i in t]) == '' else
+                              [', '.join([i for i in t])])
             print(f'{temp.name} {temp.surname}:\n\tВозраст: {temp.age}\n\t'
                   f'Здоровье: {temp.hp}\n\tКоличество еды: {temp.hunger}\n\t'
                   f'Контроль: {temp.control}\n\tСтресс: {temp.stress}\n\tОсобенности:\n\t\t{special}'
                   f'\n\tУмения:\n\t\t{skills}\n\tБафы:\n\t\t{buff}\n\tДебафы:\n\t\t{de_buff}\n\t'
-                  f'В левой руке {left_arm}\n\tВ правой руке {right_arm}'
-                  f'\n\tЗа спиной {back}\n\tВ карманах {pockets}')
+                  f'В левой руке {left_arm}.\n\tВ правой руке {right_arm}.'
+                  f'\n\tЗа спиной {back}.\n\tВ карманах {pockets}.')
         return '---------------'
 
     def __repr__(self):
