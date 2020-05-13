@@ -1,5 +1,5 @@
 from Code.Person import Data_pers, Action
-from Save_Loading.save_loading import save, load
+from Save_Loading.json_save_loader import save, load
 
 
 def home_screen(flag=None):
@@ -26,8 +26,7 @@ def home_screen(flag=None):
 
 
 def test():
-    home_screen('new game')
-    home_screen('out')
+    print(load())
 
 
 def main():

@@ -162,13 +162,17 @@ class Personage:
 
 
 class Data_pers:
-    PRESET = '1. Вы одиночка, с запасом самого необходимого, для выживания.\n'
+    PRESET = '1. Вы одиночка, с запасом самого необходимого, для выживания.\n2. '
 
-    def __init__(self, flag=None):
+    def __init__(self, flag=None, gen=False):
         self.personalities = []
-        print(f'Выберите один из сценариев:\n\t{Data_pers.PRESET}')
-        flag = int(input('Сценарий номер:\n')) if flag is None else flag
-        if flag == 1:
+        if gen is False:
+            print(f'Выберите один из сценариев:\n\t{Data_pers.PRESET}')
+            flag = int(input('Сценарий номер:\n')) if flag is None else flag
+        if gen is not False:
+            for i in range(flag):
+                self.personalities.append(Personage())
+        elif flag == 1:
             self.personalities.append(Personage())
             pers, data = self.personalities[0], Data.file_data
             pers.right_arm = data.AXE[0]
@@ -176,6 +180,7 @@ class Data_pers:
             pers.pockets[1] = data.SMALL_OBJECT[1]
             pers.back = data.BACKPACK[0]
             pers.back[2].append(data.CANNED[0])
+            # print(pers.right_arm, pers.left_arm, pers.back, pers.pockets, sep='\n')
 
     def info(self, number_pers=None):
         if number_pers is None:
