@@ -170,40 +170,47 @@ class Data_pers:
         flag = int(input('Сценарий номер:\n')) if flag is None else flag
         if flag == 1:
             self.personalities.append(Personage())
-            self.personalities[0].right_arm = Data.file_data.AXE[0]
-            self.personalities[0].pockets[0] = Data.file_data.SMALL_OBJECT[0]
-            self.personalities[0].pockets[1] = Data.file_data.SMALL_OBJECT[1]
+            pers, data = self.personalities[0], Data.file_data
+            pers.right_arm = data.AXE[0]
+            pers.pockets[0] = data.SMALL_OBJECT[0]
+            pers.pockets[1] = data.SMALL_OBJECT[1]
+            pers.back = data.BACKPACK[0]
+            pers.back[2].append(data.CANNED[0])
 
-    def info(self, pers=None):
-        if pers is None:
-            pers = int(input(f'Введите, чтобы получить статистику. Число от 0 до {len(self.personalities)}'
-                             f' Или нажмите enter, чтобы не выводить статисику.\n'))
-        if pers >= 0 or pers < len(self.personalities):
-            temp = self.personalities[pers]
-            special = 'нет' if temp.special == set() else \
-                '\n\t\t'.join([SPECIAL_BASE_PRINT[i] for i in list(temp.special)])
-            skills = 'нет' if temp.skills == set() else \
-                '\n\t\t'.join([SPECIAL_BASE_PRINT[i] for i in list(temp.skills)])
-            buff = 'нет' if temp.buff == set() else \
-                '\n\t\t'.join([PERSON_EVENTS_PRINT[i] for i in list(temp.buff)])
-            de_buff = 'нет' if temp.skills == set() else \
-                '\n\t\t'.join([PERSON_EVENTS_PRINT[i] for i in list(temp.de_buff)])
+    def info(self, number_pers=None):
+        if number_pers is None:
+            number_pers = int(input(f'Введите, чтобы получить статистику. Число от 0 до {len(self.personalities)}'
+                                    f' Или нажмите enter, чтобы не выводить статисику.\n'))
+        if number_pers >= 0 or number_pers < len(self.personalities):
+            pers = self.personalities[number_pers]
+            special = 'нет' if pers.special == set() else \
+                '\n\t\t'.join([SPECIAL_BASE_PRINT[i] for i in list(pers.special)])
+            skills = 'нет' if pers.skills == set() else \
+                '\n\t\t'.join([SPECIAL_BASE_PRINT[i] for i in list(pers.skills)])
+            buff = 'нет' if pers.buff == set() else \
+                '\n\t\t'.join([PERSON_EVENTS_PRINT[i] for i in list(pers.buff)])
+            de_buff = 'нет' if pers.skills == set() else \
+                '\n\t\t'.join([PERSON_EVENTS_PRINT[i] for i in list(pers.de_buff)])
 
-            left_arm = 'пусто' if temp.left_arm is None else temp.left_arm[0]
-            right_arm = 'пусто' if temp.right_arm is None else temp.right_arm[0]
-            back = 'пусто' if temp.back is None else temp.back[0]
-            t = []
-            for i in temp.pockets:
+            left_arm = 'пусто' if pers.left_arm is None else pers.left_arm[0]
+            right_arm = 'пусто' if pers.right_arm is None else pers.right_arm[0]
+            back = 'пусто' if pers.back is None else pers.back[0]
+            backpack = [i[0] for i in pers.back[2][1:]] if back != 'пусто' else False
+            backpack = ', '.join(backpack) if backpack is not False else False
+            temp = []
+            for i in pers.pockets:
                 if i is not None:
-                    t.append(i[0])
-            pockets = ''.join(['пусто'] if ''.join([i for i in t]) == '' else
-                              [', '.join([i for i in t])])
-            print(f'{temp.name} {temp.surname}:\n\tВозраст: {temp.age}\n\t'
-                  f'Здоровье: {temp.hp}\n\tКоличество еды: {temp.hunger}\n\t'
-                  f'Контроль: {temp.control}\n\tСтресс: {temp.stress}\n\tОсобенности:\n\t\t{special}'
+                    temp.append(i[0])
+            pockets = ''.join(['пусто'] if ''.join([i for i in temp]) == '' else
+                              [', '.join([i for i in temp])])
+            print(f'{pers.name} {pers.surname}:\n\tВозраст: {pers.age}\n\t'
+                  f'Здоровье: {pers.hp}\n\tКоличество еды: {pers.hunger}\n\t'
+                  f'Контроль: {pers.control}\n\tСтресс: {pers.stress}\n\tОсобенности:\n\t\t{special}'
                   f'\n\tУмения:\n\t\t{skills}\n\tБафы:\n\t\t{buff}\n\tДебафы:\n\t\t{de_buff}\n\t'
                   f'В левой руке {left_arm}.\n\tВ правой руке {right_arm}.'
                   f'\n\tЗа спиной {back}.\n\tВ карманах {pockets}.')
+            if backpack is not False:
+                print(f'\tВ {Data.file_data.BACKPACK_PRINT[back]} находятся {backpack}.')
         return '---------------'
 
     def __repr__(self):
