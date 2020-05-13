@@ -1,5 +1,6 @@
 from Code.Person import Data_pers, Action
 from Save_Loading.json_save_loader import save, load
+import json
 
 
 def home_screen(flag=None):
@@ -14,13 +15,12 @@ def home_screen(flag=None):
             save(persons)
             print('Игра сохранена.')
     elif text == 'load game':
-        f = open('Save_Loading/save.text', 'r')
-        if f.read() == '':
-            print('Ошибка. Нет сохранения, начните новую игру.')
-        else:
+        try:
+            temp = json.load(open('Save_Loading/save.json'))
             persons = load()
             print('Игра загружена.')
-        f.close()
+        except:
+            print('Нет сохранения.')
     elif text == 'out':
         print(persons)
 
@@ -36,4 +36,4 @@ def main():
 
 if __name__ == '__main__':
     persons = None
-    test()
+    main()

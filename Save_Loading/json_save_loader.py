@@ -4,7 +4,10 @@ import os
 
 
 def save(data_save):
-    os.remove('Save_Loading/save.json')
+    try:
+        os.remove('Save_Loading/save.json')
+    except:
+        pass
     open('Save_Loading/save.json', 'tw').close()
     for pers in data_save.personalities:
         temp = [pers.name, pers.surname, pers.age, list(pers.special), list(pers.skills), list(pers.buff),

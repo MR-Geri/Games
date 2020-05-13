@@ -180,7 +180,6 @@ class Data_pers:
             pers.pockets[1] = data.SMALL_OBJECT[1]
             pers.back = data.BACKPACK[0]
             pers.back[2].append(data.CANNED[0])
-            # print(pers.right_arm, pers.left_arm, pers.back, pers.pockets, sep='\n')
 
     def info(self, number_pers=None):
         if number_pers is None:
