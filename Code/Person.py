@@ -162,12 +162,12 @@ class Personage:
 
 
 class Data_pers:
-    PRESET = '1. Вы одиночка, с запасом самого необходимого, для выживания.\n2. '
+    PRESET = '\t1. Вы одиночка, с запасом самого необходимого, для выживания.\n\t2. '
 
     def __init__(self, flag=None, gen=False):
         self.personalities = []
         if gen is False:
-            print(f'Выберите один из сценариев:\n\t{Data_pers.PRESET}')
+            print(f'Выберите один из сценариев:\n{Data_pers.PRESET}')
             flag = int(input('Сценарий номер:\n')) if flag is None else flag
         if gen is not False:
             for i in range(flag):
