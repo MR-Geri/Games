@@ -39,7 +39,7 @@ def print_text(message, x, y, font_color=(0, 0, 0), font_type='Data/shrift.ttf',
 
 
 class Button:
-    def __init__(self, w, h, x=10, y=10, inactive_color=(13, 162, 58), active_color=(23, 204, 58)):
+    def __init__(self, w, h, x=10, y=10, inactive_color=(212, 92, 0), active_color=(255, 111, 0)):
         self.w, self.h, self.inactive_color, self.active_color = w, h, inactive_color, active_color
         self.ots_x, self.ots_y = x, y
 
@@ -62,7 +62,7 @@ class Button:
 
 def menu():
     run_game = True
-    ex_button = Button(w=200, h=80, y=20, x=50)
+    ex_button = Button(w=200, h=80, y=20, x=27)
     new_button = Button(w=200, h=60)
     save_load_button = Button(w=200, h=60)
     pygame.mixer_music.load('Data/menu.mp3')
