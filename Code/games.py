@@ -8,6 +8,19 @@ FPS = 60
 person = None
 run_menu = False
 run_preset = False
+run_options = False
+active_display = 0
+volume = 0.05
+
+
+def is_active_display():
+    global active_display, volume
+    if pygame.display.get_active() == 0:
+        pygame.mixer.music.pause()
+        active_display = 1
+    elif active_display == 1 and pygame.display.get_active() == 1:
+        active_display = 0
+        pygame.mixer_music.unpause()
 
 
 class Presets:
@@ -16,9 +29,10 @@ class Presets:
 
     def one(self):
         global person
-        person = Data_pers(1)
+        if person is None:
+            person = Data_pers(1)
+            print(person)
         """Отладочная характеристика персонажа(персонажей)"""
-        print(person)
 
     def one_print(self):
         return Presets().preset[0]
@@ -41,7 +55,7 @@ class Button:
         if x < mouse[0] < x + self.w and y < mouse[1] < y + self.h:
             pygame.draw.rect(display, self.active_color, (x, y, self.w, self.h))
             if click[0] == 1 and action is not None:
-                pygame.time.delay(100)
+                pygame.time.delay(50)
                 if action is quit:
                     pygame.quit()
                     quit()
@@ -59,7 +73,7 @@ class Button:
             pygame.draw.rect(display, self.inactive_color, (680, 700, 980, 600))
             print_text(action_info(), 700, 720)
             if click[0] == 1 and action is not None:
-                pygame.time.delay(100)
+                pygame.time.delay(50)
                 if action is quit:
                     pygame.quit()
                     quit()
@@ -74,13 +88,15 @@ class Button:
 
 
 def new_game():
-    global run_menu, run_preset, display, back_menu, menu_rect
+    global run_menu, run_preset
     display.blit(back_menu, (0, 0))
     preset_button = Button(w=480, h=50, x=75, y=14)
-    run_menu, run_preset = False, True
-    pygame.display.update()
+    back_button = Button(w=110, h=50, y=14)
+    run_preset, run_menu = True, False
     while run_preset:
+        is_active_display()
         preset_button.draw_info(100, 700, 'Бывалый выживальщик.', Presets().one, Presets().one_print)
+        back_button.draw(10, 10, 'Назад', menu)
         for i in pygame.event.get():
             if i.type == pygame.QUIT:
                 pygame.quit()
@@ -89,7 +105,6 @@ def new_game():
                 run_menu = False
                 menu()
         pygame.display.update()
-        clock.tick(FPS)
 
 
 def save_game():
@@ -104,47 +119,63 @@ def save_game():
 def load_game():
     global person
     try:
-        temp = json.load(open('Save_Loading/save.json'))
+        json.load(open('Save_Loading/save.json'))
         person = load()
         print('Игра загружена.')
     except:
         print('Нет сохранения.')
 
 
-def menu():
-    global run_menu, back_menu
-    run_menu = True
+def options():
+    global run_menu, run_options
+    run_options, run_menu = True, False
     display.blit(back_menu, (0, 0))
-    pygame.display.update()
+    back_button = Button(w=110, h=50, y=14)
+    while run_options:
+        is_active_display()
+        back_button.draw(10, 10, 'Назад', menu)
+        for i in pygame.event.get():
+            if i.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if i.type == pygame.KEYDOWN and i.key == pygame.K_ESCAPE:
+                run_menu = False
+                menu()
+        pygame.display.update()
+
+
+def menu():
+    global run_menu, run_preset, run_options
+    run_menu, run_preset, run_options = True, False, False
+    display.blit(back_menu, (0, 0))
     ex_button = Button(w=200, h=80, x=27, y=20)
     new_game_button = Button(w=280, h=50, x=52, y=13)
     save_load_button = Button(w=280, h=50, x=20, y=13)
-
+    options_button = Button(w=280, h=50, x=55, y=13)
     while run_menu:
+        is_active_display()
         new_game_button.draw(820, 600, 'Новая игра', new_game)
         save_load_button.draw(820, 700, 'Загрузить игру', load_game)
+        options_button.draw(820, 800, 'Настройки', options)
         ex_button.draw(860, 900, 'Выход', quit, 50)
         for i in pygame.event.get():
             if i.type == pygame.QUIT:
                 pygame.quit()
                 quit()
         pygame.display.update()
-        clock.tick(FPS)
 
 
 def start_game():
-    global display, back_menu, menu_rect, clock
+    global display, back_menu
+    pygame.init()
     display = pygame.display.set_mode((1920, 1080), pygame.FULLSCREEN)
-    clock = pygame.time.Clock()
     back_menu = pygame.image.load('Data/menu.jpg')
-    menu_rect = back_menu.get_rect(bottomright=(1920, 1080))
     display.blit(back_menu, (0, 0))
+    # clock = pygame.time.Clock() ---- clock.tick(FPS)
     pygame.mixer_music.load('Data/menu.mp3')
-    pygame.mixer_music.set_volume(0.05)
+    pygame.mixer_music.set_volume(volume)
     pygame.mixer_music.play(-1)
     menu()
 
 
-pygame.init()
 start_game()
-

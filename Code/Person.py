@@ -149,7 +149,7 @@ class Personage:
         return self.de_buff
 
     def __init__(self):
-        """данные"""
+        """Характеристика"""
         self.name, self.surname = Personage.set_name(self), Personage.set_surname(self)
         self.age = Personage.set_age(self)
         self.special, self.skills = Personage.set_special(self), set()
@@ -163,6 +163,7 @@ class Personage:
 
 class Data_pers:
     def __init__(self, flag=None, gen=False):
+        """Создание наборов для персонажей"""
         self.personalities = []
         if gen is not False:
             for i in range(flag):
