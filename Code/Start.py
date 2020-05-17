@@ -1,5 +1,4 @@
 from Code.Person import Data_pers
-from Save_Loading.json_save_loader import save
 import json
 import pygame
 
@@ -39,7 +38,7 @@ class Presets:
         return Presets().preset[0]
 
 
-def print_text(message, x, y, font_color=(0, 0, 0), font_type='Data/shrift.ttf', font_size=30):
+def print_text(message, x, y, font_color=(0, 0, 0), font_type='../Data/shrift.ttf', font_size=30):
     font_type = pygame.font.Font(font_type, font_size)
     text = font_type.render(message, True, font_color)
     display.blit(text, (x, y))
@@ -105,10 +104,26 @@ def new_game():
         pygame.display.update()
 
 
+def helper_save(data_save):
+    data_t = []
+    for pers in data_save.personalities:
+        temp = [pers.name, pers.surname, pers.age, list(pers.special), list(pers.skills), list(pers.buff),
+                list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.control, pers.stress,
+                pers.left_arm, pers.right_arm, pers.back, pers.pockets]
+        data_t.append(temp)
+    try:
+        data = json.load(open('../Save_Loading/save.json'))
+    except:
+        data = []
+    data.append(data_t)
+    with open('../Save_Loading/save.json', 'w') as file:
+        json.dump(data, file, indent=2, ensure_ascii=False)
+
+
 def save_game():
     global person
     if person is not None:
-        save(person)
+        helper_save(person)
         print('Игра сохранена.')
     else:
         print('Игра не создана.')
@@ -116,28 +131,24 @@ def save_game():
 
 def helper_load(number):
     global person
-    try:
-        if person is None:
-            temp = json.load(open('Save_Loading/save.json'))
-            temp = temp[number]
-            person = Data_pers(len(temp), True)
-            for pers in range(len(temp)):
-                person.personalities[pers].name, person.personalities[pers].surname = temp[pers][0], temp[pers][1]
-                person.personalities[pers].age = temp[pers][2]
-                person.personalities[pers].special = set(temp[pers][3])
-                person.personalities[pers].skills = set(temp[pers][4])
-                person.personalities[pers].buff = set(temp[pers][5])
-                person.personalities[pers].de_buff = set(temp[pers][6])
-                person.personalities[pers].hp = temp[pers][7]
-                person.personalities[pers].hunger, person.personalities[pers].water = temp[pers][8], temp[pers][9]
-                person.personalities[pers].control, person.personalities[pers].stress = temp[pers][10], temp[pers][11]
-                person.personalities[pers].left_arm = temp[pers][12]
-                person.personalities[pers].right_arm = temp[pers][13]
-                person.personalities[pers].back, person.personalities[pers].pockets = temp[pers][14], temp[pers][15]
-
-            print('Игра загружена.')
-    except:
-        print('Ошибка загрузки.')
+    if person is None:
+        temp = json.load(open('../Save_Loading/save.json'))
+        temp = temp[number]
+        person = Data_pers(len(temp), True)
+        for pers in range(len(temp)):
+            person.personalities[pers].name, person.personalities[pers].surname = temp[pers][0], temp[pers][1]
+            person.personalities[pers].age = temp[pers][2]
+            person.personalities[pers].special = set(temp[pers][3])
+            person.personalities[pers].skills = set(temp[pers][4])
+            person.personalities[pers].buff = set(temp[pers][5])
+            person.personalities[pers].de_buff = set(temp[pers][6])
+            person.personalities[pers].hp = temp[pers][7]
+            person.personalities[pers].hunger, person.personalities[pers].water = temp[pers][8], temp[pers][9]
+            person.personalities[pers].control, person.personalities[pers].stress = temp[pers][10], temp[pers][11]
+            person.personalities[pers].left_arm = temp[pers][12]
+            person.personalities[pers].right_arm = temp[pers][13]
+            person.personalities[pers].back, person.personalities[pers].pockets = temp[pers][14], temp[pers][15]
+        print('Игра загружена.')
 
 
 def load_game():
@@ -145,7 +156,7 @@ def load_game():
     saves_button = Button(w=480, h=50, x=10, y=10)
     while True:
         is_active_display()
-        saves_button.draw(200, 200, 'Ячейка 1.', helper_load(0))
+        saves_button.draw(200, 200, 'Ячейка 1.', helper_load)
         for i in pygame.event.get():
             if i.type == pygame.QUIT:
                 pygame.quit()
@@ -153,7 +164,6 @@ def load_game():
             if i.type == pygame.KEYDOWN and i.key == pygame.K_ESCAPE:
                 menu()
         pygame.display.update()
-
 
 
 def options():
@@ -194,10 +204,10 @@ def start_game():
     global display, back_menu
     pygame.init()
     display = pygame.display.set_mode((1920, 1080), pygame.FULLSCREEN)
-    back_menu = pygame.image.load('Data/menu.jpg')
+    back_menu = pygame.image.load('../Data/menu.jpg')
     display.blit(back_menu, (0, 0))
     # clock = pygame.time.Clock() ---- clock.tick(FPS)
-    pygame.mixer_music.load('Data/menu.mp3')
+    pygame.mixer_music.load('../Data/menu.mp3')
     pygame.mixer_music.set_volume(volume)
     pygame.mixer_music.play(-1)
     menu()
