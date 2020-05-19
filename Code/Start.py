@@ -7,6 +7,7 @@ import pygame
 FPS = 60
 person = None
 active_display = 0
+FullScreen = False
 volume = float(json.load(open('../Save_Loading/settings.json')))
 
 
@@ -77,7 +78,7 @@ class Button:
                 if action is not None:
                     action()
         else:
-            display.blit(back_menu, (0, 0))
+            display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
             print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
             pygame.draw.rect(display, self.inactive_color, (x, y, self.w, self.h))
             pygame.time.delay(100)
@@ -85,7 +86,7 @@ class Button:
 
 
 def new_game():
-    display.blit(back_menu, (0, 0))
+    display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
     preset_button = Button(w=480, h=50, x=75, y=14)
     back_button = Button(w=110, h=50, y=14)
     while True:
@@ -147,11 +148,18 @@ def load_game():
                 person.personalities[pers].back, person.personalities[pers].pockets = temp[pers][14], temp[pers][15]
             print('Игра загружена.')
 
-    display.blit(back_menu, (0, 0))
+    display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+    back_button = Button(w=110, h=50, y=14)
     saves_button = Button(w=480, h=50, x=10, y=10)
     while True:
         is_active_display()
-        saves_button.draw(200, 200, 'Ячейка 1.', helper_load)
+        pygame.draw.rect(display, (255, 255, 0), (700, 385, 520, 308))
+        back_button.draw(10, 10, 'Назад', menu)
+        saves_button.draw(720, 395, 'Ячейка 1.', helper_load(0))
+        saves_button.draw(720, 455, 'Ячейка 2.', helper_load(0))
+        saves_button.draw(720, 515, 'Ячейка 3.', helper_load(0))
+        saves_button.draw(720, 575, 'Ячейка 4.', helper_load(0))
+        saves_button.draw(720, 635, 'Ячейка 5.', helper_load(0))
         for i in pygame.event.get():
             if i.type == pygame.QUIT:
                 pygame.quit()
@@ -216,7 +224,10 @@ def menu():
 def start_game():
     global display, back_menu
     pygame.init()
-    display = pygame.display.set_mode((1920, 1080), pygame.FULLSCREEN)
+    if FullScreen:
+        display = pygame.display.set_mode((1920, 1080), pygame.FULLSCREEN)
+    else:
+        display = pygame.display.set_mode((1920, 1080))
     back_menu = pygame.image.load('../Data/menu.jpg')
     display.blit(back_menu, (0, 0))
     # clock = pygame.time.Clock() ---- clock.tick(FPS)
