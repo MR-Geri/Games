@@ -1,16 +1,13 @@
 from Code.Person import Data_pers
+from Code.Graphics import blur
 import json
 import pygame
 
 
 FPS = 60
 person = None
-run_menu = False
-run_preset = False
-run_options = False
-run_load = False
 active_display = 0
-volume = 0.05
+volume = float(json.load(open('../Save_Loading/settings.json')))
 
 
 def is_active_display():
@@ -55,7 +52,7 @@ class Button:
         if x < mouse[0] < x + self.w and y < mouse[1] < y + self.h:
             pygame.draw.rect(display, self.active_color, (x, y, self.w, self.h))
             if click[0] == 1 and action is not None:
-                pygame.time.delay(50)
+                pygame.time.delay(300)
                 if action is quit:
                     pygame.quit()
                     quit()
@@ -104,23 +101,22 @@ def new_game():
         pygame.display.update()
 
 
-def helper_save(data_save):
-    data_t = []
-    for pers in data_save.personalities:
-        temp = [pers.name, pers.surname, pers.age, list(pers.special), list(pers.skills), list(pers.buff),
-                list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.control, pers.stress,
-                pers.left_arm, pers.right_arm, pers.back, pers.pockets]
-        data_t.append(temp)
-    try:
-        data = json.load(open('../Save_Loading/save.json'))
-    except:
-        data = []
-    data.append(data_t)
-    with open('../Save_Loading/save.json', 'w') as file:
-        json.dump(data, file, indent=2, ensure_ascii=False)
-
-
 def save_game():
+    def helper_save(data_save):
+        data_t = []
+        for pers in data_save.personalities:
+            temp = [pers.name, pers.surname, pers.age, list(pers.special), list(pers.skills), list(pers.buff),
+                    list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.control, pers.stress,
+                    pers.left_arm, pers.right_arm, pers.back, pers.pockets]
+            data_t.append(temp)
+        try:
+            data = json.load(open('../Save_Loading/save.json'))
+        except:
+            data = []
+        data.append(data_t)
+        with open('../Save_Loading/save.json', 'w') as file:
+            json.dump(data, file, indent=2, ensure_ascii=False)
+
     global person
     if person is not None:
         helper_save(person)
@@ -129,29 +125,28 @@ def save_game():
         print('Игра не создана.')
 
 
-def helper_load(number):
-    global person
-    if person is None:
-        temp = json.load(open('../Save_Loading/save.json'))
-        temp = temp[number]
-        person = Data_pers(len(temp), True)
-        for pers in range(len(temp)):
-            person.personalities[pers].name, person.personalities[pers].surname = temp[pers][0], temp[pers][1]
-            person.personalities[pers].age = temp[pers][2]
-            person.personalities[pers].special = set(temp[pers][3])
-            person.personalities[pers].skills = set(temp[pers][4])
-            person.personalities[pers].buff = set(temp[pers][5])
-            person.personalities[pers].de_buff = set(temp[pers][6])
-            person.personalities[pers].hp = temp[pers][7]
-            person.personalities[pers].hunger, person.personalities[pers].water = temp[pers][8], temp[pers][9]
-            person.personalities[pers].control, person.personalities[pers].stress = temp[pers][10], temp[pers][11]
-            person.personalities[pers].left_arm = temp[pers][12]
-            person.personalities[pers].right_arm = temp[pers][13]
-            person.personalities[pers].back, person.personalities[pers].pockets = temp[pers][14], temp[pers][15]
-        print('Игра загружена.')
-
-
 def load_game():
+    def helper_load(number):
+        global person
+        if person is None:
+            temp = json.load(open('../Save_Loading/save.json'))
+            temp = temp[number]
+            person = Data_pers(len(temp), True)
+            for pers in range(len(temp)):
+                person.personalities[pers].name, person.personalities[pers].surname = temp[pers][0], temp[pers][1]
+                person.personalities[pers].age = temp[pers][2]
+                person.personalities[pers].special = set(temp[pers][3])
+                person.personalities[pers].skills = set(temp[pers][4])
+                person.personalities[pers].buff = set(temp[pers][5])
+                person.personalities[pers].de_buff = set(temp[pers][6])
+                person.personalities[pers].hp = temp[pers][7]
+                person.personalities[pers].hunger, person.personalities[pers].water = temp[pers][8], temp[pers][9]
+                person.personalities[pers].control, person.personalities[pers].stress = temp[pers][10], temp[pers][11]
+                person.personalities[pers].left_arm = temp[pers][12]
+                person.personalities[pers].right_arm = temp[pers][13]
+                person.personalities[pers].back, person.personalities[pers].pockets = temp[pers][14], temp[pers][15]
+            print('Игра загружена.')
+
     display.blit(back_menu, (0, 0))
     saves_button = Button(w=480, h=50, x=10, y=10)
     while True:
@@ -167,11 +162,29 @@ def load_game():
 
 
 def options():
-    display.blit(back_menu, (0, 0))
+    def volume_minus():
+        global volume
+        volume -= 0.01
+        volume = 0 if volume < 0 else volume
+        with open('../Save_Loading/settings.json', 'w') as file:
+            json.dump(volume, file, indent=2, ensure_ascii=False)
+        pygame.mixer_music.set_volume(volume)
+
+    def volume_plus():
+        global volume
+        volume += 0.01
+        with open('../Save_Loading/settings.json', 'w') as file:
+            json.dump(volume, file, indent=2, ensure_ascii=False)
+        pygame.mixer_music.set_volume(volume)
+
+    display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
     back_button = Button(w=110, h=50, y=14)
+    settings_opt = Button(w=100, h=100, x=35, y=35)
     while True:
         is_active_display()
         back_button.draw(10, 10, 'Назад', menu)
+        settings_opt.draw(100, 100, '', volume_plus)
+        settings_opt.draw(100, 210, '', volume_minus)
         for i in pygame.event.get():
             if i.type == pygame.QUIT:
                 pygame.quit()
