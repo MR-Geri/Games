@@ -150,7 +150,7 @@ def load_game():
 
     display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
     back_button = Button(w=110, h=50, y=14)
-    saves_button = Button(w=480, h=50, x=10, y=10)
+    saves_button = Button(w=480, h=50, x=160, y=10)
     while True:
         is_active_display()
         pygame.draw.rect(display, (255, 255, 0), (700, 385, 520, 308))
@@ -190,9 +190,10 @@ def options():
     settings_opt = Button(w=100, h=100, x=35, y=35)
     while True:
         is_active_display()
+        pygame.draw.rect(display, (255, 255, 0), (700, 385, 520, 308))
         back_button.draw(10, 10, 'Назад', menu)
-        settings_opt.draw(100, 100, '', volume_plus)
-        settings_opt.draw(100, 210, '', volume_minus)
+        settings_opt.draw(980, 400, '', volume_plus)
+        settings_opt.draw(1100, 400, '', volume_minus)
         for i in pygame.event.get():
             if i.type == pygame.QUIT:
                 pygame.quit()
