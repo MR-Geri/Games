@@ -156,10 +156,10 @@ def load_game():
         pygame.draw.rect(display, (255, 255, 0), (700, 385, 520, 308))
         back_button.draw(10, 10, 'Назад', menu)
         saves_button.draw(720, 395, 'Ячейка 1.', helper_load(0))
-        saves_button.draw(720, 455, 'Ячейка 2.', helper_load(0))
-        saves_button.draw(720, 515, 'Ячейка 3.', helper_load(0))
-        saves_button.draw(720, 575, 'Ячейка 4.', helper_load(0))
-        saves_button.draw(720, 635, 'Ячейка 5.', helper_load(0))
+        saves_button.draw(720, 455, 'Ячейка 2.', helper_load(1))
+        saves_button.draw(720, 515, 'Ячейка 3.', helper_load(2))
+        saves_button.draw(720, 575, 'Ячейка 4.', helper_load(3))
+        saves_button.draw(720, 635, 'Ячейка 5.', helper_load(4))
         for i in pygame.event.get():
             if i.type == pygame.QUIT:
                 pygame.quit()
