@@ -5,7 +5,9 @@ import pygame
 
 
 FPS = 60
+DATA_SAVE = json.load(open('../Save_Loading/save.json'))
 FLAG_NEW_GAME = True
+FLAG_OK_LOAD = True
 FLAG_LOAD_GAME = True
 FLAG_MENU = True
 FLAG_OPTION = True
@@ -37,6 +39,7 @@ class Presets:
             person = Data_pers(1)
             print(person)
             FLAG_NEW_GAME, FLAG_MENU = False
+
         """Отладочная характеристика персонажа(персонажей)"""
 
     def one_print(self):
@@ -134,8 +137,7 @@ def menu():
         def helper_load(number):
             global person
             if person is None:
-                temp = json.load(open('../Save_Loading/save.json'))
-                temp = temp[number]
+                temp = DATA_SAVE[number]
                 person = Data_pers(len(temp), True)
                 for pers in range(len(temp)):
                     person.personalities[pers].name, person.personalities[pers].surname = temp[pers][0], temp[pers][1]
@@ -159,9 +161,31 @@ def menu():
                 self.n = n
 
             def load(self):
-                helper_load(self.n)
-
+                global FLAG_LOAD_GAME, FLAG_OK_LOAD
+                if len(DATA_SAVE) <= self.n:
+                    FLAG_LOAD_GAME = False
+                    display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+                    ok_button = Button(w=110, h=50, y=14)
+                    FLAG_OK_LOAD = True
+                    while FLAG_OK_LOAD:
+                        is_active_display()
+                        ok_button.draw(10, 10, 'Назад', menu)
+                        ok_button.draw(1000, 600, 'Ок', load_game)
+                        pygame.draw.rect(display, (255, 255, 0), (910, 500, 100, 40))
+                        for i in pygame.event.get():
+                            if i.type == pygame.QUIT:
+                                pygame.quit()
+                                quit()
+                            if i.type == pygame.KEYDOWN and i.key == pygame.K_ESCAPE:
+                                load_game()
+                        pygame.display.update()
+                else:
+                    helper_load(self.n)
+        global FLAG_OK_LOAD, FLAG_LOAD_GAME
+        FLAG_OK_LOAD = False
+        FLAG_LOAD_GAME = True
         display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+        pygame.display.update()
         back_button = Button(w=110, h=50, y=14)
         saves_button = Button(w=480, h=50, x=160, y=10)
         while FLAG_LOAD_GAME:
