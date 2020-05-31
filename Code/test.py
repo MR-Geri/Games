@@ -1,22 +1,22 @@
-t = [0, 0]
-t1 = [0, 0]
-for i in range(int(input())):
-    temp = int(input())
-    if temp % 19 == 0 and temp % 2 == 0 and temp >= t[0]:
-        if temp != t[0]:
-            t[0] = temp
-        else:
-            t1[0] = temp
-    elif (temp % 19 == 0) and (temp % 2 != 0) and (temp >= t[1]):
-        if temp != t[1]:
-            t[1] = temp
-        else:
-            t1[1] = temp
-    elif (temp % 19 != 0) and (temp % 2 == 0) and (temp > t1[0]):
-        t1[0] = temp
-    elif (temp % 19 != 0) and (temp % 2 != 0) and (temp > t1[1]):
-        t1[1] = temp
-if (t[0] + t1[0]) > (t[1] + t1[1]):
-    print(t[0], t1[0])
-else:
-    print(t[1], t1[1])
+import random
+
+
+t = [random.randint(1, 1000) for _ in range(5)]
+
+
+def main():
+    data = [[0, 0], [0, 0]]
+    for i in t:
+        temp = i
+        data[0][0] = temp if temp != data[0][0] and temp > data[0][0] and temp % 19 == 0 and temp % 2 == 0 else data[0][0]
+        data[0][1] = temp if temp == data[0][0] and temp > data[0][1] and temp % 19 == 0 and temp % 2 == 0 else data[0][1]
+        data[0][1] = temp if temp > data[0][1] and temp % 19 != 0 and temp % 2 == 0 else data[0][1]
+        data[1][0] = temp if temp != data[1][0] and temp > data[1][0] and temp % 19 == 0 and temp % 2 != 0 else data[1][0]
+        data[1][1] = temp if temp == data[1][0] and temp > data[1][1] and temp % 19 == 0 and temp % 2 != 0 else data[1][1]
+        data[1][1] = temp if temp > data[1][1] and temp % 19 != 0 and temp % 2 != 0 else data[1][1]
+    data = [[sum(data[0]), data[0][0], data[0][1]], [sum(data[1]), data[1][0], data[1][1]]]
+    data.sort()
+    print(*data[-1][1:])
+
+
+main()
