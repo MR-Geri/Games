@@ -316,9 +316,9 @@ def menu():
         flag_all_false()
         FLAG[LOAD_GAME] = True
         display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
-        pygame.display.update()
         back_button = Button(w=110, h=50, y=14)
         saves_button = Button(w=480, h=50, x=160, y=10)
+        pygame.display.update()
         while FLAG[LOAD_GAME]:
             is_active_display()
             pygame.draw.rect(display, (255, 255, 0), (700, 385, 520, 308))
