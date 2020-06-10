@@ -1,4 +1,5 @@
 from PIL import Image, ImageFilter, ImageDraw
+import random
 
 
 def blur():
@@ -12,8 +13,7 @@ def create():
     temp = ImageDraw.Draw(image)
     temp.polygon(((0, 0), (0, 120), (120, 120), (120, 0)), "#000000")
     temp.polygon(((5, 5), (5, 115), (115, 115), (115, 5)), "#FFFFFF")
-    temp.polygon(((10, 10), (10, 110), (110, 110), (110, 10)), "#87CEEB")
-    image.save('../Data/cell.jpg')
-
-
-create()
+    for i in range(5):
+        color = '#{:06x}'.format(random.randint(0, 256 ** 3))
+        temp.polygon(((10, 10), (10, 110), (110, 110), (110, 10)), color)
+        image.save(f'../Data/data_sell/cell_{i}.jpg')

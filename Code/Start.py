@@ -2,6 +2,7 @@ from Code.Person import Data_pers
 from Code.Graphics import blur
 import json
 import pygame
+import random
 
 
 FPS = 60
@@ -95,9 +96,14 @@ def game():
     global left, right, up, down
 
     class Map(pygame.sprite.Sprite):
-        def __init__(self, x, y):
+        def __init__(self, x, y, flag):
             pygame.sprite.Sprite.__init__(self)
-            self.image = pygame.image.load('../Data/cell.jpg')
+            temp = ['cell_0.jpg', 'cell_1.jpg', 'cell_2.jpg', 'cell_3.jpg', 'cell_4.jpg']
+            if flag:
+                t = 'cell.jpg'
+            else:
+                t = random.choice(temp)
+            self.image = pygame.image.load(f'../Data/data_sell/{t}')
             self.rect = self.image.get_rect(center=(x + 60, y + 60))
 
     class Camera(object):
@@ -128,7 +134,7 @@ def game():
             self.x_vel = 0  # скорость перемещения. 0 - стоять на месте
             self.y_vel = 0  # скорость вертикального перемещения
             self.image = pygame.Surface((120, 120))
-            self.rect = pygame.Rect(x, y - 60, 120, 120)  # прямоугольный объект
+            self.rect = pygame.Rect(x, y, 120, 120)  # прямоугольный объект
 
         def update(self, left, right, up, down):
             self.x_vel = 0
@@ -150,7 +156,7 @@ def game():
 
     total_width = QUANTITY_SELL[0] * SIZE_SELL  # Высчитываем фактическую ширину уровня
     total_height = QUANTITY_SELL[1] * SIZE_SELL  # высоту
-    hero = Cums(51 * SIZE_SELL, 51 * SIZE_SELL)
+    hero = Cums(51 * SIZE_SELL, 51 * SIZE_SELL + 60)
     entities = pygame.sprite.Group()  # Все объекты
     entities.add(hero)
     # загрузочный экран
@@ -160,7 +166,10 @@ def game():
     pygame.display.update()
     for y in range(QUANTITY_SELL[1]):
         for x in range(QUANTITY_SELL[0]):
-            entities.add(Map(x * 120, y * 120))
+            if y == 51 and (x == 50 or x == 51):
+                entities.add(Map(x * 120, y * 120, True))
+            else:
+                entities.add(Map(x * 120, y * 120, False))
     camera = Camera(camera_configure, total_width, total_height)
     flag_all_false()
     FLAG[GAME] = True
