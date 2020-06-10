@@ -6,7 +6,6 @@ WIN_HEIGHT = 1080
 WIDTH = 10
 HEIGHT = 10
 COLOR = "#888888"
-JUMP_POWER = 10
 MOVE_SPEED = 7
 left = right = False
 up = down = False
@@ -44,34 +43,28 @@ def camera_configure(camera, target_rect):
     return temp
 
 
-class Player(pygame.sprite.Sprite):
+class Cums(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
         self.x_vel = 0  # скорость перемещения. 0 - стоять на месте
         self.y_vel = 0  # скорость вертикального перемещения
         self.image = pygame.Surface((WIDTH, HEIGHT))
-        # self.image.fill(pygame.Color(COLOR))
         self.rect = pygame.Rect(x, y, WIDTH, HEIGHT)  # прямоугольный объект
-        # self.image.set_colorkey(pygame.Color(COLOR))  # делаем фон прозрачным
 
     def update(self, left, right, up, down):
         self.x_vel = 0
         self.y_vel = 0
         if up:
-            self.y_vel = -JUMP_POWER
-            self.image.fill(pygame.Color(COLOR))
+            self.y_vel = -MOVE_SPEED
 
         if down:
-            self.y_vel = JUMP_POWER
-            self.image.fill(pygame.Color(COLOR))
+            self.y_vel = MOVE_SPEED
 
         if left:
             self.x_vel = -MOVE_SPEED  # Лево = x- n
-            self.image.fill(pygame.Color(COLOR))
 
         if right:
             self.x_vel = MOVE_SPEED  # Право = x + n
-            self.image.fill(pygame.Color(COLOR))
 
         self.rect.y += self.y_vel
         self.rect.x += self.x_vel
@@ -81,7 +74,7 @@ pygame.init()
 display = pygame.display.set_mode((1920, 1080))
 bg = pygame.Surface((WIN_WIDTH, WIN_HEIGHT))
 back_menu = pygame.image.load('../Data/menu.jpg')
-hero = Player(960, 540)
+hero = Cums(960, 540)
 entities = pygame.sprite.Group()  # Все объекты
 entities.add(hero)
 display.blit(back_menu, (0, 0))

@@ -16,6 +16,14 @@ EXIT = True
 GAME = True
 FLAG = [NEW_GAME, OK_LOAD, LOAD_GAME, MENU, OPTION, EXIT, GAME]
 #
+WIN_WIDTH = 1920
+WIN_HEIGHT = 1080
+QUANTITY_SELL = (101, 101)
+SIZE_SELL = 120
+COLOR = "#888888"
+MOVE = 10
+left = right = False
+up = down = False
 person = None
 active_display = 0
 FullScreen = False
@@ -35,39 +43,6 @@ def is_active_display():
 def flag_all_false():
     global FLAG
     FLAG = [False for _ in FLAG]
-
-
-def game():
-    display.blit(back_menu, (0, 0))
-    flag_all_false()
-    FLAG[GAME] = True
-    while FLAG[GAME]:
-        is_active_display()
-        
-        for i in pygame.event.get():
-            if i.type == pygame.QUIT:
-                pygame.quit()
-                quit()
-            if i.type == pygame.KEYDOWN and i.key == pygame.K_ESCAPE:
-                menu()
-        pygame.display.update()
-
-
-class Presets:
-    def __init__(self):
-        self.preset = ['Вы - одиночка, с запасом самого необходимого, для выживания.']
-
-    def one(self):
-        global person
-        if person is None:
-            person = Data_pers(1)
-            print(person)
-            game()
-
-        """Отладочная характеристика персонажа(персонажей)"""
-
-    def one_print(self):
-        return Presets().preset[0]
 
 
 def print_text(message, x, y, font_color=(0, 0, 0), font_type='../Data/shrift.ttf', font_size=30):
@@ -116,6 +91,128 @@ class Button:
         print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
 
 
+def game():
+    global left, right, up, down
+
+    class Map(pygame.sprite.Sprite):
+        def __init__(self, x, y):
+            pygame.sprite.Sprite.__init__(self)
+            self.image = pygame.image.load('../Data/cell.jpg')
+            self.rect = self.image.get_rect(center=(x + 60, y + 60))
+
+    class Camera(object):
+        def __init__(self, camera_func, width, height):
+            self.camera_func = camera_func
+            self.state = pygame.Rect(0, 0, width, height)
+
+        def apply(self, target):
+            return target.rect.move(self.state.topleft)
+
+        def update(self, target):
+            self.state = self.camera_func(self.state, target.rect)
+
+    def camera_configure(camera, target_rect):
+        lo, t = target_rect[:-2]
+        w, h = camera[2:]
+        lo, t = - lo + WIN_WIDTH / 2, - t + WIN_HEIGHT / 2
+        lo = min(0, lo)  # Не движемся дальше левой границы
+        lo = max(-(camera.width - WIN_WIDTH), lo)  # Не движемся дальше правой границы
+        t = max(-(camera.height - WIN_HEIGHT), t)  # Не движемся дальше нижней границы
+        t = min(0, t)  # Не движемся дальше верхней границы
+        temp = pygame.Rect(int(lo), int(t), int(w), int(h))
+        return temp
+
+    class Cums(pygame.sprite.Sprite):
+        def __init__(self, x, y):
+            pygame.sprite.Sprite.__init__(self)
+            self.x_vel = 0  # скорость перемещения. 0 - стоять на месте
+            self.y_vel = 0  # скорость вертикального перемещения
+            self.image = pygame.Surface((120, 120))
+            self.rect = pygame.Rect(x, y - 60, 120, 120)  # прямоугольный объект
+
+        def update(self, left, right, up, down):
+            self.x_vel = 0
+            self.y_vel = 0
+            if up and self.rect.y > 540:
+                self.y_vel = -MOVE
+
+            if down and self.rect.y < total_height - 540:
+                self.y_vel = MOVE
+
+            if left and self.rect.x > 960:
+                self.x_vel = -MOVE  # Лево = x- n
+
+            if right and self.rect.x < total_width - 960:
+                self.x_vel = MOVE  # Право = x + n
+
+            self.rect.y += self.y_vel
+            self.rect.x += self.x_vel
+
+    total_width = QUANTITY_SELL[0] * SIZE_SELL  # Высчитываем фактическую ширину уровня
+    total_height = QUANTITY_SELL[1] * SIZE_SELL  # высоту
+    hero = Cums(51 * SIZE_SELL, 51 * SIZE_SELL)
+    entities = pygame.sprite.Group()  # Все объекты
+    entities.add(hero)
+    # загрузочный экран
+    display.blit(back_menu, (0, 0))
+    pygame.draw.rect(display, (212, 92, 0), (850, 510, 245, 45))
+    print_text('Идёт загрузка', 860, 520)
+    pygame.display.update()
+    for y in range(QUANTITY_SELL[1]):
+        for x in range(QUANTITY_SELL[0]):
+            entities.add(Map(x * 120, y * 120))
+    camera = Camera(camera_configure, total_width, total_height)
+    flag_all_false()
+    FLAG[GAME] = True
+    while FLAG[GAME]:
+        is_active_display()
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if e.type == pygame.KEYDOWN and e.key == pygame.K_UP:
+                up = True
+            if e.type == pygame.KEYDOWN and e.key == pygame.K_LEFT:
+                left = True
+            if e.type == pygame.KEYDOWN and e.key == pygame.K_RIGHT:
+                right = True
+            if e.type == pygame.KEYDOWN and e.key == pygame.K_DOWN:
+                down = True
+
+            if e.type == pygame.KEYUP and e.key == pygame.K_UP:
+                up = False
+            if e.type == pygame.KEYUP and e.key == pygame.K_RIGHT:
+                right = False
+            if e.type == pygame.KEYUP and e.key == pygame.K_LEFT:
+                left = False
+            if e.type == pygame.KEYUP and e.key == pygame.K_DOWN:
+                down = False
+        display.blit(bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
+        camera.update(hero)  # центризируем камеру относительно персонажа
+        hero.update(left, right, up, down)  # передвижение
+        for e in entities:
+            display.blit(e.image, camera.apply(e))
+
+        pygame.display.update()  # обновление и вывод всех изменений на экран
+
+
+class Presets:
+    def __init__(self):
+        self.preset = ['Вы - одиночка, с запасом самого необходимого, для выживания.']
+
+    def one(self):
+        global person
+        if person is None:
+            person = Data_pers(1)
+            print(person)
+            game()
+
+        """Отладочная характеристика персонажа(персонажей)"""
+
+    def one_print(self):
+        return Presets().preset[0]
+
+
 def save_game():
     def helper_save(data_save):
         data_t = []
@@ -142,26 +239,14 @@ def save_game():
 
 def menu():
     def new_game():
-        class Map(pygame.sprite.Sprite):
-            def __init__(self, x, y):
-                pygame.sprite.Sprite.__init__(self)
-                self.image = pygame.image.load('../Data/cell.jpg')
-                self.rect = self.image.get_rect(center=(x + 50, y + 50))
-
         display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
         preset_button = Button(w=480, h=50, x=75, y=14)
         back_button = Button(w=110, h=50, y=14)
-        map = pygame.sprite.Group()
-        for y in range(100):
-            for x in range(100):
-                map.add(Map(x * 100, y * 100))
         flag_all_false()
         FLAG[NEW_GAME] = True
         # тут генерируем карту
         while FLAG[NEW_GAME]:
             is_active_display()
-            map.draw(display)
-            map.update()
             preset_button.draw_info(100, 700, 'Бывалый выживальщик.', Presets().one, Presets().one_print)
             back_button.draw(10, 10, 'Назад', menu)
             for ivent in pygame.event.get():
@@ -317,14 +402,16 @@ def menu():
 
 
 def start_game():
-    global display, back_menu
+    global display, back_menu, bg
     pygame.init()
     if FullScreen:
         display = pygame.display.set_mode((1920, 1080), pygame.FULLSCREEN)
     else:
         display = pygame.display.set_mode((1920, 1080))
+    pygame.display.set_caption("Geri_Games_INC")
     back_menu = pygame.image.load('../Data/menu.jpg')
     display.blit(back_menu, (0, 0))
+    bg = pygame.Surface((WIN_WIDTH, WIN_HEIGHT))
     # clock = pygame.time.Clock() ---- clock.tick(FPS)
     pygame.mixer_music.load('../Data/menu.mp3')
     pygame.mixer_music.set_volume(volume)
