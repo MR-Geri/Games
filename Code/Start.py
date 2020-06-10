@@ -6,12 +6,16 @@ import pygame
 
 FPS = 60
 DATA_SAVE = json.load(open('../Save_Loading/save.json'))
-FLAG_NEW_GAME = True
-FLAG_OK_LOAD = True
-FLAG_LOAD_GAME = True
-FLAG_MENU = True
-FLAG_OPTION = True
-FLAG_EXIT = True
+#
+NEW_GAME = True
+OK_LOAD = True
+LOAD_GAME = True
+MENU = True
+OPTION = True
+EXIT = True
+GAME = True
+FLAG = [NEW_GAME, OK_LOAD, LOAD_GAME, MENU, OPTION, EXIT, GAME]
+#
 person = None
 active_display = 0
 FullScreen = False
@@ -28,17 +32,37 @@ def is_active_display():
         pygame.mixer_music.unpause()
 
 
+def flag_all_false():
+    global FLAG
+    FLAG = [False for _ in FLAG]
+
+
+def game():
+    display.blit(back_menu, (0, 0))
+    flag_all_false()
+    FLAG[GAME] = True
+    while FLAG[GAME]:
+        is_active_display()
+        
+        for i in pygame.event.get():
+            if i.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if i.type == pygame.KEYDOWN and i.key == pygame.K_ESCAPE:
+                menu()
+        pygame.display.update()
+
+
 class Presets:
     def __init__(self):
         self.preset = ['Вы - одиночка, с запасом самого необходимого, для выживания.']
 
     def one(self):
-        global FLAG_MENU, FLAG_NEW_GAME
         global person
         if person is None:
             person = Data_pers(1)
             print(person)
-            FLAG_NEW_GAME, FLAG_MENU = False
+            game()
 
         """Отладочная характеристика персонажа(персонажей)"""
 
@@ -118,11 +142,26 @@ def save_game():
 
 def menu():
     def new_game():
+        class Map(pygame.sprite.Sprite):
+            def __init__(self, x, y):
+                pygame.sprite.Sprite.__init__(self)
+                self.image = pygame.image.load('../Data/cell.jpg')
+                self.rect = self.image.get_rect(center=(x + 50, y + 50))
+
         display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
         preset_button = Button(w=480, h=50, x=75, y=14)
         back_button = Button(w=110, h=50, y=14)
-        while FLAG_NEW_GAME:
+        map = pygame.sprite.Group()
+        for y in range(100):
+            for x in range(100):
+                map.add(Map(x * 100, y * 100))
+        flag_all_false()
+        FLAG[NEW_GAME] = True
+        # тут генерируем карту
+        while FLAG[NEW_GAME]:
             is_active_display()
+            map.draw(display)
+            map.update()
             preset_button.draw_info(100, 700, 'Бывалый выживальщик.', Presets().one, Presets().one_print)
             back_button.draw(10, 10, 'Назад', menu)
             for ivent in pygame.event.get():
@@ -161,13 +200,12 @@ def menu():
                 self.n = n
 
             def load(self):
-                global FLAG_LOAD_GAME, FLAG_OK_LOAD
                 if len(DATA_SAVE) <= self.n:
-                    FLAG_LOAD_GAME = False
                     display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
                     ok_button = Button(w=110, h=50, y=14)
-                    FLAG_OK_LOAD = True
-                    while FLAG_OK_LOAD:
+                    flag_all_false()
+                    FLAG[OK_LOAD] = True
+                    while FLAG[OK_LOAD]:
                         is_active_display()
                         ok_button.draw(10, 10, 'Назад', menu)
                         ok_button.draw(1000, 600, 'Ок', load_game)
@@ -181,14 +219,13 @@ def menu():
                         pygame.display.update()
                 else:
                     helper_load(self.n)
-        global FLAG_OK_LOAD, FLAG_LOAD_GAME
-        FLAG_OK_LOAD = False
-        FLAG_LOAD_GAME = True
+        flag_all_false()
+        FLAG[LOAD_GAME] = True
         display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
         pygame.display.update()
         back_button = Button(w=110, h=50, y=14)
         saves_button = Button(w=480, h=50, x=160, y=10)
-        while FLAG_LOAD_GAME:
+        while FLAG[LOAD_GAME]:
             is_active_display()
             pygame.draw.rect(display, (255, 255, 0), (700, 385, 520, 308))
             back_button.draw(10, 10, 'Назад', menu)
@@ -224,7 +261,9 @@ def menu():
         display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
         back_button = Button(w=110, h=50, y=14)
         volume_button = Button(w=100, h=100, x=35, y=35)
-        while FLAG_OPTION:
+        flag_all_false()
+        FLAG[OPTION] = True
+        while FLAG[OPTION]:
             is_active_display()
             pygame.draw.rect(display, (255, 255, 0), (700, 385, 520, 308))
             back_button.draw(10, 10, 'Назад', menu)
@@ -242,7 +281,9 @@ def menu():
         display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
         choice_button_no = Button(w=120, h=80, x=15, y=16)
         choice_button_yes = Button(w=120, h=80, x=25, y=15)
-        while FLAG_EXIT:
+        flag_all_false()
+        FLAG[EXIT] = True
+        while FLAG[EXIT]:
             is_active_display()
             pygame.draw.rect(display, (255, 255, 0), (790, 510, 340, 100))
             choice_button_yes.draw(800, 520, 'Да', quit, 50)
@@ -260,7 +301,9 @@ def menu():
     new_game_button = Button(w=280, h=50, x=52, y=13)
     save_load_button = Button(w=280, h=50, x=20, y=13)
     options_button = Button(w=280, h=50, x=55, y=13)
-    while FLAG_MENU:
+    flag_all_false()
+    FLAG[MENU] = True
+    while FLAG[MENU]:
         is_active_display()
         new_game_button.draw(820, 600, 'Новая игра', new_game)
         save_load_button.draw(820, 700, 'Загрузить игру', load_game)
