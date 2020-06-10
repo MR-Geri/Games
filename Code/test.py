@@ -7,8 +7,9 @@ WIDTH = 10
 HEIGHT = 10
 COLOR = "#888888"
 JUMP_POWER = 10
-GRAVITY = 0.35 # Сила, которая будет тянуть нас вниз
 MOVE_SPEED = 7
+left = right = False
+up = down = False
 
 
 class Map(pygame.sprite.Sprite):
@@ -31,81 +32,56 @@ class Camera(object):
 
 
 def camera_configure(camera, target_rect):
-    l, t, _, _ = target_rect
-    _, _, w, h = camera
-    l, t = - l + WIN_WIDTH / 2, - t + WIN_HEIGHT / 2
+    lo, t = target_rect[:-2]
+    w, h = camera[2:]
+    lo, t = - lo + WIN_WIDTH / 2, - t + WIN_HEIGHT / 2
 
-    l = min(0, l)                           # Не движемся дальше левой границы
-    l = max(-(camera.width - WIN_WIDTH), l)   # Не движемся дальше правой границы
+    lo = min(0, lo)                           # Не движемся дальше левой границы
+    lo = max(-(camera.width - WIN_WIDTH), lo)   # Не движемся дальше правой границы
     t = max(-(camera.height - WIN_HEIGHT), t) # Не движемся дальше нижней границы
     t = min(0, t)                           # Не движемся дальше верхней границы
-
-    return pygame.Rect(l, t, w, h)
+    temp = pygame.Rect(int(lo), int(t), int(w), int(h))
+    return temp
 
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
-        self.xvel = 0  # скорость перемещения. 0 - стоять на месте
-        self.startX = x  # Начальная позиция Х, пригодится когда будем переигрывать уровень
-        self.startY = y
-        self.yvel = 0  # скорость вертикального перемещения
-        self.onGround = False  # На земле ли я?
+        self.x_vel = 0  # скорость перемещения. 0 - стоять на месте
+        self.y_vel = 0  # скорость вертикального перемещения
         self.image = pygame.Surface((WIDTH, HEIGHT))
-        self.image.fill(pygame.Color(COLOR))
+        # self.image.fill(pygame.Color(COLOR))
         self.rect = pygame.Rect(x, y, WIDTH, HEIGHT)  # прямоугольный объект
-        self.image.set_colorkey(pygame.Color(COLOR))  # делаем фон прозрачным
+        # self.image.set_colorkey(pygame.Color(COLOR))  # делаем фон прозрачным
 
-    def update(self, left, right, up, platforms):
-
+    def update(self, left, right, up, down):
+        self.x_vel = 0
+        self.y_vel = 0
         if up:
-            self.yvel = -JUMP_POWER
+            self.y_vel = -JUMP_POWER
+            self.image.fill(pygame.Color(COLOR))
+
+        if down:
+            self.y_vel = JUMP_POWER
             self.image.fill(pygame.Color(COLOR))
 
         if left:
-            self.xvel = -MOVE_SPEED  # Лево = x- n
+            self.x_vel = -MOVE_SPEED  # Лево = x- n
             self.image.fill(pygame.Color(COLOR))
 
         if right:
-            self.xvel = MOVE_SPEED  # Право = x + n
+            self.x_vel = MOVE_SPEED  # Право = x + n
             self.image.fill(pygame.Color(COLOR))
 
-        if not (left or right):  # стоим, когда нет указаний идти
-            self.xvel = 0
-
-        self.rect.y += self.yvel
-        self.collide(0, self.yvel, platforms)
-
-        self.rect.x += self.xvel  # переносим свои положение на xvel
-        self.collide(self.xvel, 0, platforms)
-
-    def collide(self, xvel, yvel, platforms):
-        for p in platforms:
-            if pygame.sprite.collide_rect(self, p): # если есть пересечение платформы с игроком
-
-                if xvel > 0:                      # если движется вправо
-                    self.rect.right = p.rect.left # то не движется вправо
-
-                if xvel < 0:                      # если движется влево
-                    self.rect.left = p.rect.right # то не движется влево
-
-                if yvel > 0:                      # если падает вниз
-                    self.rect.bottom = p.rect.top # то не падает вниз
-                    self.onGround = True          # и становится на что-то твердое
-                    self.yvel = 0                 # и энергия падения пропадает
-
-                if yvel < 0:                      # если движется вверх
-                    self.rect.top = p.rect.bottom
-                    self.yvel = 0
+        self.rect.y += self.y_vel
+        self.rect.x += self.x_vel
 
 
 pygame.init()
 display = pygame.display.set_mode((1920, 1080))
 bg = pygame.Surface((WIN_WIDTH, WIN_HEIGHT))
 back_menu = pygame.image.load('../Data/menu.jpg')
-left = right = False  # по умолчанию - стоим
-up = False
-hero = Player(10, 10)
+hero = Player(960, 540)
 entities = pygame.sprite.Group()  # Все объекты
 entities.add(hero)
 display.blit(back_menu, (0, 0))
@@ -128,6 +104,8 @@ while True:
             left = True
         if e.type == pygame.KEYDOWN and e.key == pygame.K_RIGHT:
             right = True
+        if e.type == pygame.KEYDOWN and e.key == pygame.K_DOWN:
+            down = True
 
         if e.type == pygame.KEYUP and e.key == pygame.K_UP:
             up = False
@@ -135,11 +113,12 @@ while True:
             right = False
         if e.type == pygame.KEYUP and e.key == pygame.K_LEFT:
             left = False
+        if e.type == pygame.KEYUP and e.key == pygame.K_DOWN:
+            down = False
     display.blit(bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
 
     camera.update(hero)  # центризируем камеру относительно персонажа
-    hero.update(left, right, up)  # передвижение
-    # entities.draw(screen) # отображение
+    hero.update(left, right, up, down)  # передвижение
     for e in entities:
         display.blit(e.image, camera.apply(e))
 
