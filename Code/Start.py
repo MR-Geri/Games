@@ -3,6 +3,7 @@ from Code.Graphics import blur
 import json
 import pygame
 import random
+import time
 
 
 FPS = 60
@@ -62,12 +63,29 @@ class Button:
         click = pygame.mouse.get_pressed()
         if x < mouse[0] < x + self.w and y < mouse[1] < y + self.h:
             pygame.draw.rect(display, self.active_color, (x, y, self.w, self.h))
+            if click[0] == 1:
+                if action is quit:
+                    pygame.quit()
+                    quit()
+                else:
+                    time.sleep(0.1)
+                    action()
+        else:
+            pygame.draw.rect(display, self.inactive_color, (x, y, self.w, self.h))
+        print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
+
+    def draw_act(self, x, y, message=None, action=None, size=30, act=()):
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+        if x < mouse[0] < x + self.w and y < mouse[1] < y + self.h:
+            pygame.draw.rect(display, self.active_color, (x, y, self.w, self.h))
             if click[0] == 1 and action is not None:
                 if action is quit:
                     pygame.quit()
                     quit()
                 if action is not None:
-                    action()
+                    time.sleep(0.1)
+                    action(act)
         else:
             pygame.draw.rect(display, self.inactive_color, (x, y, self.w, self.h))
         print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
@@ -84,6 +102,7 @@ class Button:
                     pygame.quit()
                     quit()
                 if action is not None:
+                    time.sleep(0.1)
                     action()
         else:
             display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
@@ -253,7 +272,6 @@ def menu():
         back_button = Button(w=110, h=50, y=14)
         flag_all_false()
         FLAG[NEW_GAME] = True
-        # тут генерируем карту
         while FLAG[NEW_GAME]:
             is_active_display()
             preset_button.draw_info(100, 700, 'Бывалый выживальщик.', Presets().one, Presets().one_print)
@@ -302,7 +320,7 @@ def menu():
                     while FLAG[OK_LOAD]:
                         is_active_display()
                         ok_button.draw(10, 10, 'Назад', menu)
-                        ok_button.draw(1000, 600, 'Ок', load_game)
+                        ok_button.draw(1400, 1000, 'Ок', load_game)
                         pygame.draw.rect(display, (255, 255, 0), (910, 500, 100, 40))
                         for i in pygame.event.get():
                             if i.type == pygame.QUIT:
@@ -313,6 +331,7 @@ def menu():
                         pygame.display.update()
                 else:
                     helper_load(self.n)
+
         flag_all_false()
         FLAG[LOAD_GAME] = True
         display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
