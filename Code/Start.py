@@ -26,6 +26,8 @@ COLOR = "#888888"
 MOVE = 10
 left = right = False
 up = down = False
+#
+click_left = False
 person = None
 active_display = 0
 FullScreen = False
@@ -58,57 +60,88 @@ class Button:
         self.w, self.h, self.inactive_color, self.active_color = w, h, inactive_color, active_color
         self.ots_x, self.ots_y = x, y
 
-    def draw(self, x, y, message=None, action=None, size=30):
+    def draw(self, x, y, message=None, action=None, size=30, time_sleep=0.0):
+        global click_left
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if x < mouse[0] < x + self.w and y < mouse[1] < y + self.h:
             pygame.draw.rect(display, self.active_color, (x, y, self.w, self.h))
-            if click[0] == 1:
+            flag = 0 if click_left is False else 1
+            click_left = True if click[0] == 1 and flag == 0 else False
+            if click_left and action is not None:
                 if action is quit:
                     pygame.quit()
                     quit()
                 else:
-                    time.sleep(0.1)
+                    time.sleep(time_sleep)
                     action()
         else:
             pygame.draw.rect(display, self.inactive_color, (x, y, self.w, self.h))
         print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
 
     def draw_act(self, x, y, message=None, action=None, size=30, act=()):
+        global click_left
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if x < mouse[0] < x + self.w and y < mouse[1] < y + self.h:
             pygame.draw.rect(display, self.active_color, (x, y, self.w, self.h))
-            if click[0] == 1 and action is not None:
+            flag = 0 if click_left is False else 1
+            click_left = True if click[0] == 1 and flag == 0 else False
+            if click_left and action is not None:
                 if action is quit:
                     pygame.quit()
                     quit()
                 if action is not None:
-                    time.sleep(0.1)
                     action(act)
         else:
             pygame.draw.rect(display, self.inactive_color, (x, y, self.w, self.h))
         print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
 
     def draw_info(self, x, y, message=None, action=None, action_info=None, size=30):
+        global click_left
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if x < mouse[0] < x + self.w and y < mouse[1] < y + self.h:
             pygame.draw.rect(display, self.active_color, (x, y, self.w, self.h))
             pygame.draw.rect(display, self.inactive_color, (680, 700, 980, 600))
             print_text(action_info(), 700, 720)
-            if click[0] == 1 and action is not None:
+            flag = 0 if click_left is False else 1
+            click_left = True if click[0] == 1 and flag == 0 else False
+            if click_left and action is not None:
                 if action is quit:
                     pygame.quit()
                     quit()
                 if action is not None:
-                    time.sleep(0.1)
                     action()
         else:
             display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
             print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
             pygame.draw.rect(display, self.inactive_color, (x, y, self.w, self.h))
         print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
+
+
+def save_game():
+    def helper_save(data_save):
+        data_t = [[1], []]
+        for pers in data_save.personalities:
+            temp = [pers.name, pers.surname, pers.age, list(pers.special), list(pers.skills), list(pers.buff),
+                    list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.control, pers.stress,
+                    pers.left_arm, pers.right_arm, pers.back, pers.pockets]
+            data_t[-1].append(temp)
+        try:
+            data = json.load(open('../Save_Loading/save.json'))
+        except:
+            data = []
+        data.append(data_t)
+        with open('../Save_Loading/save.json', 'w') as file:
+            json.dump(data, file, indent=2, ensure_ascii=False)
+
+    global person
+    if person is not None:
+        helper_save(person)
+        print('Игра сохранена.')
+    else:
+        print('Игра не создана.')
 
 
 def game():
@@ -232,6 +265,7 @@ class Presets:
         global person
         if person is None:
             person = Data_pers(1)
+            save_game()
             print(person)
             game()
 
@@ -239,30 +273,6 @@ class Presets:
 
     def one_print(self):
         return Presets().preset[0]
-
-
-def save_game():
-    def helper_save(data_save):
-        data_t = []
-        for pers in data_save.personalities:
-            temp = [pers.name, pers.surname, pers.age, list(pers.special), list(pers.skills), list(pers.buff),
-                    list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.control, pers.stress,
-                    pers.left_arm, pers.right_arm, pers.back, pers.pockets]
-            data_t.append(temp)
-        try:
-            data = json.load(open('../Save_Loading/save.json'))
-        except:
-            data = []
-        data.append(data_t)
-        with open('../Save_Loading/save.json', 'w') as file:
-            json.dump(data, file, indent=2, ensure_ascii=False)
-
-    global person
-    if person is not None:
-        helper_save(person)
-        print('Игра сохранена.')
-    else:
-        print('Игра не создана.')
 
 
 def menu():
@@ -288,7 +298,7 @@ def menu():
         def helper_load(number):
             global person
             if person is None:
-                temp = DATA_SAVE[number]
+                temp = DATA_SAVE[number][1]
                 person = Data_pers(len(temp), True)
                 for pers in range(len(temp)):
                     person.personalities[pers].name, person.personalities[pers].surname = temp[pers][0], temp[pers][1]
@@ -314,14 +324,14 @@ def menu():
             def load(self):
                 if len(DATA_SAVE) <= self.n:
                     display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
-                    ok_button = Button(w=110, h=50, y=14)
+                    ok_button = Button(w=480, h=50, x=210, y=14)
                     flag_all_false()
                     FLAG[OK_LOAD] = True
                     while FLAG[OK_LOAD]:
                         is_active_display()
-                        ok_button.draw(10, 10, 'Назад', menu)
-                        ok_button.draw(1400, 1000, 'Ок', load_game)
-                        pygame.draw.rect(display, (255, 255, 0), (910, 500, 100, 40))
+                        pygame.draw.rect(display, (255, 255, 0), (700, 495, 520, 110))
+                        print_text(message='Сохранение не создано.', x=780, y=510, font_size=30)
+                        ok_button.draw(720, 545, 'Ок', load_game)
                         for i in pygame.event.get():
                             if i.type == pygame.QUIT:
                                 pygame.quit()
@@ -336,17 +346,17 @@ def menu():
         FLAG[LOAD_GAME] = True
         display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
         back_button = Button(w=110, h=50, y=14)
-        saves_button = Button(w=480, h=50, x=160, y=10)
+        saves_button = Button(w=480, h=50, x=160, y=14)
         pygame.display.update()
         while FLAG[LOAD_GAME]:
             is_active_display()
             pygame.draw.rect(display, (255, 255, 0), (700, 385, 520, 308))
             back_button.draw(10, 10, 'Назад', menu)
-            saves_button.draw(720, 395, 'Ячейка 1.', Helper_load(0).load)
-            saves_button.draw(720, 455, 'Ячейка 2.', Helper_load(1).load)
-            saves_button.draw(720, 515, 'Ячейка 3.', Helper_load(2).load)
-            saves_button.draw(720, 575, 'Ячейка 4.', Helper_load(3).load)
-            saves_button.draw(720, 635, 'Ячейка 5.', Helper_load(4).load)
+            saves_button.draw(720, 395, 'Ячейка 1.', Helper_load(0).load, time_sleep=0.25)
+            saves_button.draw(720, 455, 'Ячейка 2.', Helper_load(1).load, time_sleep=0.25)
+            saves_button.draw(720, 515, 'Ячейка 3.', Helper_load(2).load, time_sleep=0.25)
+            saves_button.draw(720, 575, 'Ячейка 4.', Helper_load(3).load, time_sleep=0.25)
+            saves_button.draw(720, 635, 'Ячейка 5.', Helper_load(4).load, time_sleep=0.25)
             for i in pygame.event.get():
                 if i.type == pygame.QUIT:
                     pygame.quit()
