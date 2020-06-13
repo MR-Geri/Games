@@ -8,7 +8,9 @@ import time
 
 FPS = 60
 DATA_SAVE = json.load(open('../Save_Loading/save.json'))
-#
+# Temp переменные
+save_map_y = []
+# Флаги для циклов
 NEW_GAME = True
 OK_LOAD = True
 LOAD_GAME = True
@@ -17,7 +19,7 @@ OPTION = True
 EXIT = True
 GAME = True
 FLAG = [NEW_GAME, OK_LOAD, LOAD_GAME, MENU, OPTION, EXIT, GAME]
-#
+# Для камеры, движения и карты
 WIN_WIDTH = 1920
 WIN_HEIGHT = 1080
 QUANTITY_SELL = (101, 101)
@@ -26,9 +28,13 @@ COLOR = "#888888"
 MOVE = 10
 left = right = False
 up = down = False
-#
+# Карта
+data_sell = ['cell.jpg', 'cell_0.jpg', 'cell_1.jpg', 'cell_2.jpg', 'cell_3.jpg', 'cell_4.jpg']
+# Левый клик
 click_left = False
+# Персонаж
 person = None
+# Настройки
 active_display = 0
 FullScreen = False
 volume = float(json.load(open('../Save_Loading/settings.json')))
@@ -120,42 +126,11 @@ class Button:
         print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
 
 
-def save_game():
-    def helper_save(data_save):
-        data_t = [[1], []]
-        for pers in data_save.personalities:
-            temp = [pers.name, pers.surname, pers.age, list(pers.special), list(pers.skills), list(pers.buff),
-                    list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.control, pers.stress,
-                    pers.left_arm, pers.right_arm, pers.back, pers.pockets]
-            data_t[-1].append(temp)
-        try:
-            data = json.load(open('../Save_Loading/save.json'))
-        except:
-            data = []
-        data.append(data_t)
-        with open('../Save_Loading/save.json', 'w') as file:
-            json.dump(data, file, indent=2, ensure_ascii=False)
-
-    global person
-    if person is not None:
-        helper_save(person)
-        print('Игра сохранена.')
-    else:
-        print('Игра не создана.')
-
-
-def game():
-    global left, right, up, down
-
+def gen_map(map_saves=None):
     class Map(pygame.sprite.Sprite):
-        def __init__(self, x, y, flag):
+        def __init__(self, x, y, graphic_sell):
             pygame.sprite.Sprite.__init__(self)
-            temp = ['cell_0.jpg', 'cell_1.jpg', 'cell_2.jpg', 'cell_3.jpg', 'cell_4.jpg']
-            if flag:
-                t = 'cell.jpg'
-            else:
-                t = random.choice(temp)
-            self.image = pygame.image.load(f'../Data/data_sell/{t}')
+            self.image = pygame.image.load(f'../Data/data_sell/{graphic_sell}')
             self.rect = self.image.get_rect(center=(x + 60, y + 60))
 
     class Camera(object):
@@ -177,8 +152,7 @@ def game():
         lo = max(-(camera.width - WIN_WIDTH), lo)  # Не движемся дальше правой границы
         t = max(-(camera.height - WIN_HEIGHT), t)  # Не движемся дальше нижней границы
         t = min(0, t)  # Не движемся дальше верхней границы
-        temp = pygame.Rect(int(lo), int(t), int(w), int(h))
-        return temp
+        return pygame.Rect(int(lo), int(t), int(w), int(h))
 
     class Cums(pygame.sprite.Sprite):
         def __init__(self, x, y):
@@ -206,23 +180,68 @@ def game():
             self.rect.y += self.y_vel
             self.rect.x += self.x_vel
 
-    total_width = QUANTITY_SELL[0] * SIZE_SELL  # Высчитываем фактическую ширину уровня
-    total_height = QUANTITY_SELL[1] * SIZE_SELL  # высоту
-    hero = Cums(51 * SIZE_SELL, 51 * SIZE_SELL + 60)
-    entities = pygame.sprite.Group()  # Все объекты
-    entities.add(hero)
-    # загрузочный экран
+    global save_map_y
+    # Загрузочный экран
     display.blit(back_menu, (0, 0))
     pygame.draw.rect(display, (212, 92, 0), (850, 510, 245, 45))
     print_text('Идёт загрузка', 860, 520)
     pygame.display.update()
-    for y in range(QUANTITY_SELL[1]):
-        for x in range(QUANTITY_SELL[0]):
-            if y == 51 and (x == 50 or x == 51):
-                entities.add(Map(x * 120, y * 120, True))
-            else:
-                entities.add(Map(x * 120, y * 120, False))
+    #
+    total_width = QUANTITY_SELL[0] * SIZE_SELL  # Высчитываем фактическую ширину уровня
+    total_height = QUANTITY_SELL[1] * SIZE_SELL  # высоту
+    hero = Cums(51 * SIZE_SELL, 51 * SIZE_SELL + 60)
+    MAP = pygame.sprite.Group()  # Все объекты
+    MAP.add(hero)
+    if map_saves is not None:
+        # Загрузка карты
+        for y in range(QUANTITY_SELL[1]):
+            for x in range(QUANTITY_SELL[0]):
+                MAP.add(Map(int(x) * 120, int(y) * 120, data_sell[int(map_saves[int(y)][int(x)])]))
+    elif map_saves is None:
+        # Создание и сохранение карты
+        save_map_y = []
+        for y in range(QUANTITY_SELL[1]):
+            save_map_x = ''
+            for x in range(QUANTITY_SELL[0]):
+                if y == 51 and (x == 50 or x == 51):
+                    graphic_cell = data_sell[0]
+                else:
+                    graphic_cell = random.choice(data_sell[1:])
+                save_map_x += str(data_sell.index(graphic_cell))
+                MAP.add(Map(x * 120, y * 120, graphic_cell))
+            save_map_y.append(save_map_x)
     camera = Camera(camera_configure, total_width, total_height)
+    return MAP, hero, camera
+
+
+def save_game():
+    global person, save_map_y
+    if person is not None:
+        data_t = [[], []]
+        data_t[0] = save_map_y
+        for pers in person.personalities:
+            temp = [pers.name, pers.surname, pers.age, list(pers.special), list(pers.skills), list(pers.buff),
+                    list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.control, pers.stress,
+                    pers.left_arm, pers.right_arm, pers.back, pers.pockets]
+            data_t[-1].append(temp)
+        try:
+            data = json.load(open('../Save_Loading/save.json'))
+        except:
+            data = []
+        data.append(data_t)
+        with open('../Save_Loading/save.json', 'w') as file:
+            json.dump(data, file, indent=2, ensure_ascii=False)
+        print('Игра сохранена.')
+    else:
+        print('Игра не создана.')
+
+
+def game(MAP, hero, camera, load=False):
+    global left, right, up, down
+    # загрузочный экран
+    if load is False:
+        save_game()
+    display.blit(back_menu, (0, 0))
     flag_all_false()
     FLAG[GAME] = True
     while FLAG[GAME]:
@@ -251,7 +270,7 @@ def game():
         display.blit(bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
         camera.update(hero)  # центризируем камеру относительно персонажа
         hero.update(left, right, up, down)  # передвижение
-        for e in entities:
+        for e in MAP:
             display.blit(e.image, camera.apply(e))
 
         pygame.display.update()  # обновление и вывод всех изменений на экран
@@ -265,9 +284,8 @@ class Presets:
         global person
         if person is None:
             person = Data_pers(1)
-            save_game()
             print(person)
-            game()
+            game(*gen_map(), load=False)
 
         """Отладочная характеристика персонажа(персонажей)"""
 
@@ -298,23 +316,24 @@ def menu():
         def helper_load(number):
             global person
             if person is None:
-                temp = DATA_SAVE[number][1]
-                person = Data_pers(len(temp), True)
-                for pers in range(len(temp)):
-                    person.personalities[pers].name, person.personalities[pers].surname = temp[pers][0], temp[pers][1]
-                    person.personalities[pers].age = temp[pers][2]
-                    person.personalities[pers].special = set(temp[pers][3])
-                    person.personalities[pers].skills = set(temp[pers][4])
-                    person.personalities[pers].buff = set(temp[pers][5])
-                    person.personalities[pers].de_buff = set(temp[pers][6])
-                    person.personalities[pers].hp = temp[pers][7]
-                    person.personalities[pers].hunger, person.personalities[pers].water = temp[pers][8], temp[pers][9]
-                    person.personalities[pers].control, person.personalities[pers].stress = temp[pers][10], temp[pers][
+                per = DATA_SAVE[number][1]
+                person = Data_pers(len(per), True)
+                for pers in range(len(per)):
+                    person.personalities[pers].name, person.personalities[pers].surname = per[pers][0], per[pers][1]
+                    person.personalities[pers].age = per[pers][2]
+                    person.personalities[pers].special = set(per[pers][3])
+                    person.personalities[pers].skills = set(per[pers][4])
+                    person.personalities[pers].buff = set(per[pers][5])
+                    person.personalities[pers].de_buff = set(per[pers][6])
+                    person.personalities[pers].hp = per[pers][7]
+                    person.personalities[pers].hunger, person.personalities[pers].water = per[pers][8], per[pers][9]
+                    person.personalities[pers].control, person.personalities[pers].stress = per[pers][10], per[pers][
                         11]
-                    person.personalities[pers].left_arm = temp[pers][12]
-                    person.personalities[pers].right_arm = temp[pers][13]
-                    person.personalities[pers].back, person.personalities[pers].pockets = temp[pers][14], temp[pers][15]
+                    person.personalities[pers].left_arm = per[pers][12]
+                    person.personalities[pers].right_arm = per[pers][13]
+                    person.personalities[pers].back, person.personalities[pers].pockets = per[pers][14], per[pers][15]
                 print(person)
+                game(*gen_map(DATA_SAVE[number][0]), load=True)
                 print(f'Игра загружена.')
 
         class Helper_load:
