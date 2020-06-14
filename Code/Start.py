@@ -258,10 +258,15 @@ def start_game():
                     data = json.load(open('../Save_Loading/save.json'))
                 except:
                     data = []
-                data.append(data_t)
+                if data_t in data:
+                    data[data.index(data_t)] = data_t
+                    print('Сохранение заменено.')
+                else:
+                    data.append(data_t)
+                    print('Сохранение создано.')
+
                 with open('../Save_Loading/save.json', 'w') as file:
                     json.dump(data, file, indent=2, ensure_ascii=False)
-                print('Игра сохранена.')
                 flag_esc_menu = False
             else:
                 print('Игра не создана.')
