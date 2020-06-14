@@ -7,12 +7,8 @@ import time
 
 
 FPS = 60
-DATA_SAVE = json.load(open('../Save_Loading/save.json'))
-# Temp переменные
-save_map_y = []
-MAP = None
-hero = None
-camera = None
+# Flag
+flag_esc_menu = True
 # Флаги для циклов
 ESC_MENU = False
 NEW_GAME = False
@@ -23,6 +19,12 @@ OPTION = False
 EXIT = False
 GAME = False
 FLAG = [NEW_GAME, OK_LOAD, LOAD_GAME, MENU, OPTION, EXIT, GAME, ESC_MENU]
+# Для сохранения карты
+save_map_y = []
+# Для карты и камеры
+MAP = None
+hero = None
+camera = None
 # Для камеры, движения и карты
 WIN_WIDTH = 1920
 WIN_HEIGHT = 1080
@@ -32,7 +34,7 @@ COLOR = "#888888"
 MOVE = 10
 left = right = False
 up = down = False
-# Карта
+# Ячейки для карты
 data_sell = ['cell.jpg', 'cell_0.jpg', 'cell_1.jpg', 'cell_2.jpg', 'cell_3.jpg', 'cell_4.jpg']
 # Левый клик
 click_left = False
@@ -42,6 +44,7 @@ person = None
 active_display = 0
 FullScreen = False
 volume = float(json.load(open('../Save_Loading/settings.json')))
+DATA_SAVE = json.load(open('../Save_Loading/save.json'))
 
 
 def is_active_display():
@@ -132,6 +135,8 @@ class Button:
 
 def start_game():
     def esc_menu():
+        global flag_esc_menu
+        flag_esc_menu = True
         saves_button = Button(w=480, h=50, x=160, y=14)
         flag_all_false()
         FLAG[ESC_MENU] = True
@@ -139,7 +144,7 @@ def start_game():
             is_active_display()
             pygame.draw.rect(display, (255, 255, 0), (700, 385, 520, 308))
             saves_button.draw(720, 395, 'Продолжить', game)
-            saves_button.draw(720, 455, 'Сохранить игру', )
+            saves_button.draw(720, 455, 'Сохранить игру', save_game)
             saves_button.draw(720, 515, 'Загрузить игру')
             saves_button.draw(720, 575, 'Настройки')
             saves_button.draw(720, 635, 'Выход в главное меню', menu)
@@ -239,25 +244,27 @@ def start_game():
         return MAP, hero, camera
 
     def save_game():
-        global person, save_map_y
-        if person is not None:
-            data_t = [[], []]
-            data_t[0] = save_map_y
-            for pers in person.personalities:
-                temp = [pers.name, pers.surname, pers.age, list(pers.special), list(pers.skills), list(pers.buff),
-                        list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.control, pers.stress,
-                        pers.left_arm, pers.right_arm, pers.back, pers.pockets]
-                data_t[-1].append(temp)
-            try:
-                data = json.load(open('../Save_Loading/save.json'))
-            except:
-                data = []
-            data.append(data_t)
-            with open('../Save_Loading/save.json', 'w') as file:
-                json.dump(data, file, indent=2, ensure_ascii=False)
-            print('Игра сохранена.')
-        else:
-            print('Игра не создана.')
+        global person, save_map_y, flag_esc_menu
+        if flag_esc_menu:
+            if person is not None:
+                data_t = [[], []]
+                data_t[0] = save_map_y
+                for pers in person.personalities:
+                    temp = [pers.name, pers.surname, pers.age, list(pers.special), list(pers.skills), list(pers.buff),
+                            list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.control, pers.stress,
+                            pers.left_arm, pers.right_arm, pers.back, pers.pockets]
+                    data_t[-1].append(temp)
+                try:
+                    data = json.load(open('../Save_Loading/save.json'))
+                except:
+                    data = []
+                data.append(data_t)
+                with open('../Save_Loading/save.json', 'w') as file:
+                    json.dump(data, file, indent=2, ensure_ascii=False)
+                print('Игра сохранена.')
+                flag_esc_menu = False
+            else:
+                print('Игра не создана.')
 
     def load_game():
         def helper_load(number):
@@ -383,6 +390,7 @@ def start_game():
                 if i.type == pygame.QUIT:
                     pygame.quit()
                     quit()
+                # Выход при ENTER не работаееет
                 if i.type == pygame.KEYDOWN and i.key == pygame.K_KP_ENTER:
                     pygame.quit()
                     quit()
