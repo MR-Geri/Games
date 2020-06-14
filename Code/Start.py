@@ -145,7 +145,7 @@ def start_game():
             pygame.draw.rect(display, (255, 255, 0), (700, 385, 520, 308))
             saves_button.draw(720, 395, 'Продолжить', game)
             saves_button.draw(720, 455, 'Сохранить игру', save_game)
-            saves_button.draw(720, 515, 'Загрузить игру')
+            saves_button.draw(720, 515, 'Загрузить игру', load_game)
             saves_button.draw(720, 575, 'Настройки')
             saves_button.draw(720, 635, 'Выход в главное меню', menu)
             for i in pygame.event.get():
@@ -274,34 +274,32 @@ def start_game():
     def load_game():
         def helper_load(number):
             global person
-            if person is None:
-                per = DATA_SAVE[number][1]
-                person = Data_pers(len(per), True)
-                for pers in range(len(per)):
-                    person.personalities[pers].name, person.personalities[pers].surname = per[pers][0], per[pers][1]
-                    person.personalities[pers].age = per[pers][2]
-                    person.personalities[pers].special = set(per[pers][3])
-                    person.personalities[pers].skills = set(per[pers][4])
-                    person.personalities[pers].buff = set(per[pers][5])
-                    person.personalities[pers].de_buff = set(per[pers][6])
-                    person.personalities[pers].hp = per[pers][7]
-                    person.personalities[pers].hunger, person.personalities[pers].water = per[pers][8], per[pers][9]
-                    person.personalities[pers].control, person.personalities[pers].stress = per[pers][10], per[pers][
-                        11]
-                    person.personalities[pers].left_arm = per[pers][12]
-                    person.personalities[pers].right_arm = per[pers][13]
-                    person.personalities[pers].back, person.personalities[pers].pockets = per[pers][14], per[pers][15]
-                print(person)
-                gen_map(DATA_SAVE[number][0])
-                game()
-                print(f'Игра загружена.')
+            per = DATA_SAVE[number][1]
+            person = Data_pers(len(per), True)
+            for pers in range(len(per)):
+                person.personalities[pers].name, person.personalities[pers].surname = per[pers][0], per[pers][1]
+                person.personalities[pers].age = per[pers][2]
+                person.personalities[pers].special = set(per[pers][3])
+                person.personalities[pers].skills = set(per[pers][4])
+                person.personalities[pers].buff = set(per[pers][5])
+                person.personalities[pers].de_buff = set(per[pers][6])
+                person.personalities[pers].hp = per[pers][7]
+                person.personalities[pers].hunger, person.personalities[pers].water = per[pers][8], per[pers][9]
+                person.personalities[pers].control, person.personalities[pers].stress = per[pers][10], per[pers][
+                    11]
+                person.personalities[pers].left_arm = per[pers][12]
+                person.personalities[pers].right_arm = per[pers][13]
+                person.personalities[pers].back, person.personalities[pers].pockets = per[pers][14], per[pers][15]
+            print(person)
+            gen_map(DATA_SAVE[number][0])
+            game()
+            print(f'Игра загружена.')
 
         class Helper_load:
             def __init__(self, n):
                 self.n = n
 
             def load(self):
-                print(len(DATA_SAVE), self.n)
                 if len(DATA_SAVE) > int(self.n):
                     helper_load(self.n)
                 else:
