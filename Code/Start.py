@@ -92,7 +92,7 @@ class Button:
             pygame.draw.rect(display, self.inactive_color, (x, y, self.w, self.h))
         print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
 
-    def draw_act(self, x, y, message=None, action=None, size=30, act=()):
+    def draw_act(self, x, y, message=None, action=None, size=30, act=(), time_sleep=0.0):
         global click_left
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
@@ -105,6 +105,7 @@ class Button:
                     pygame.quit()
                     quit()
                 if action is not None:
+                    time.sleep(time_sleep)
                     action(act)
         else:
             pygame.draw.rect(display, self.inactive_color, (x, y, self.w, self.h))
@@ -137,23 +138,27 @@ def start_game():
     def esc_menu():
         global flag_esc_menu
         flag_esc_menu = True
-        saves_button = Button(w=480, h=50, x=160, y=14)
+        continue_button = Button(w=480, h=50, x=145, y=14)
+        save_button = Button(w=480, h=50, x=120, y=14)
+        load_button = Button(w=480, h=50, x=120, y=14)
+        option_button = Button(w=480, h=50, x=160, y=14)
+        menu_button = Button(w=480, h=50, x=80, y=14)
         flag_all_false()
         FLAG[ESC_MENU] = True
         while FLAG[ESC_MENU]:
             is_active_display()
             pygame.draw.rect(display, (255, 255, 0), (700, 385, 520, 308))
-            saves_button.draw(720, 395, 'Продолжить', game)
-            saves_button.draw(720, 455, 'Сохранить игру', save_game)
-            saves_button.draw(720, 515, 'Загрузить игру', load_game)
-            saves_button.draw(720, 575, 'Настройки')
-            saves_button.draw(720, 635, 'Выход в главное меню', menu)
+            continue_button.draw(720, 395, 'Продолжить', game)
+            save_button.draw(720, 455, 'Сохранить игру', save_game)
+            load_button.draw_act(720, 515, 'Загрузить игру', load_game, act='esc', time_sleep=0.25)
+            option_button.draw_act(720, 575, 'Настройки', options_game, act='esc')
+            menu_button.draw(720, 635, 'Выход в главное меню', menu)
             for i in pygame.event.get():
                 if i.type == pygame.QUIT:
                     pygame.quit()
                     quit()
                 if i.type == pygame.KEYDOWN and i.key == pygame.K_ESCAPE:
-                    menu()
+                    game()
             pygame.display.update()
 
     def gen_map(map_saves=None):
@@ -271,7 +276,7 @@ def start_game():
             else:
                 print('Игра не создана.')
 
-    def load_game():
+    def load_game(flag):
         def helper_load(number):
             global person
             per = DATA_SAVE[number][1]
@@ -303,7 +308,11 @@ def start_game():
                 if len(DATA_SAVE) > int(self.n):
                     helper_load(self.n)
                 else:
-                    display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+                    if flag == 'esc':
+                        for e in MAP:
+                            display.blit(e.image, camera.apply(e))
+                    else:
+                        display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
                     ok_button = Button(w=480, h=50, x=210, y=14)
                     flag_all_false()
                     FLAG[OK_LOAD] = True
@@ -311,25 +320,29 @@ def start_game():
                         is_active_display()
                         pygame.draw.rect(display, (255, 255, 0), (700, 495, 520, 110))
                         print_text(message='Сохранение не создано.', x=780, y=510, font_size=30)
-                        ok_button.draw(720, 545, 'Ок', load_game)
+                        ok_button.draw(720, 545, 'Ок', back)
                         for i in pygame.event.get():
                             if i.type == pygame.QUIT:
                                 pygame.quit()
                                 quit()
                             if i.type == pygame.KEYDOWN and i.key == pygame.K_ESCAPE:
-                                load_game()
+                                back()
                         pygame.display.update()
 
-        flag_all_false()
-        FLAG[LOAD_GAME] = True
-        display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+        if flag == 'esc':
+            back = game
+        elif flag == 'menu':
+            display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+            back = menu
         back_button = Button(w=110, h=50, y=14)
         saves_button = Button(w=480, h=50, x=160, y=14)
         pygame.display.update()
+        flag_all_false()
+        FLAG[LOAD_GAME] = True
         while FLAG[LOAD_GAME]:
             is_active_display()
             pygame.draw.rect(display, (255, 255, 0), (700, 385, 520, 308))
-            back_button.draw(10, 10, 'Назад', menu)
+            back_button.draw(10, 10, 'Назад', back, time_sleep=0.25)
             saves_button.draw(720, 395, 'Ячейка 1.', Helper_load(0).load, time_sleep=0.25)
             saves_button.draw(720, 455, 'Ячейка 2.', Helper_load(1).load, time_sleep=0.25)
             saves_button.draw(720, 515, 'Ячейка 3.', Helper_load(2).load, time_sleep=0.25)
@@ -340,10 +353,10 @@ def start_game():
                     pygame.quit()
                     quit()
                 if i.type == pygame.KEYDOWN and i.key == pygame.K_ESCAPE:
-                    menu()
+                    back()
             pygame.display.update()
 
-    def options_game():
+    def options_game(flag):
         def volume_minus():
             global volume
             volume -= 0.001
@@ -359,7 +372,11 @@ def start_game():
                 json.dump(volume, file, indent=2, ensure_ascii=False)
             pygame.mixer_music.set_volume(volume)
 
-        display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+        if flag == 'esc':
+            back = game
+        elif flag == 'menu':
+            display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+            back = menu
         back_button = Button(w=110, h=50, y=14)
         volume_button = Button(w=100, h=100, x=35, y=35)
         flag_all_false()
@@ -367,7 +384,7 @@ def start_game():
         while FLAG[OPTION]:
             is_active_display()
             pygame.draw.rect(display, (255, 255, 0), (700, 385, 520, 308))
-            back_button.draw(10, 10, 'Назад', menu)
+            back_button.draw(10, 10, 'Назад', back)
             volume_button.draw(940, 420, '', volume_minus)
             volume_button.draw(1080, 420, '', volume_plus)
             for i in pygame.event.get():
@@ -375,7 +392,7 @@ def start_game():
                     pygame.quit()
                     quit()
                 if i.type == pygame.KEYDOWN and i.key == pygame.K_ESCAPE:
-                    menu()
+                    back()
             pygame.display.update()
 
     def exit_game():
@@ -486,14 +503,14 @@ def start_game():
         ex_button = Button(w=200, h=80, x=27, y=20)
         new_game_button = Button(w=280, h=50, x=52, y=13)
         save_load_button = Button(w=280, h=50, x=20, y=13)
-        options_button = Button(w=280, h=50, x=55, y=13)
+        options_button = Button(w=280, h=50, x=50, y=13)
         flag_all_false()
         FLAG[MENU] = True
         while FLAG[MENU]:
             is_active_display()
             new_game_button.draw(820, 600, 'Новая игра', new_game)
-            save_load_button.draw(820, 700, 'Загрузить игру', load_game)
-            options_button.draw(820, 800, 'Настройки', options_game)
+            save_load_button.draw_act(820, 700, 'Загрузить игру', load_game, act='menu')
+            options_button.draw_act(820, 800, 'Настройки', options_game, act='menu')
             ex_button.draw(860, 900, 'Выход', exit_game, 50)
             for i in pygame.event.get():
                 if i.type == pygame.QUIT:
