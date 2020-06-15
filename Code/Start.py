@@ -411,7 +411,7 @@ def start_game():
                     pygame.quit()
                     quit()
                 # Выход при ENTER не работаееет
-                if i.type == pygame.KEYDOWN and i.key == pygame.K_KP_ENTER:
+                if i.type == pygame.KEYDOWN and (i.key == pygame.K_RETURN or i.key == pygame.K_KP_ENTER):
                     pygame.quit()
                     quit()
                 if i.type == pygame.KEYDOWN and i.key == pygame.K_ESCAPE:
