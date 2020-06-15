@@ -422,7 +422,6 @@ def start_game():
     def game():
         global left, right, up, down
         global MAP, hero, camera
-        # загрузочный экран
         display.blit(back_menu, (0, 0))
         flag_all_false()
         FLAG[GAME] = True
@@ -435,22 +434,22 @@ def start_game():
                 if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
                     esc_menu()
 
-                if e.type == pygame.KEYDOWN and e.key == pygame.K_UP:
+                if e.type == pygame.KEYDOWN and e.key == pygame.K_w:
                     up = True
-                if e.type == pygame.KEYDOWN and e.key == pygame.K_LEFT:
+                if e.type == pygame.KEYDOWN and e.key == pygame.K_a:
                     left = True
-                if e.type == pygame.KEYDOWN and e.key == pygame.K_RIGHT:
+                if e.type == pygame.KEYDOWN and e.key == pygame.K_d:
                     right = True
-                if e.type == pygame.KEYDOWN and e.key == pygame.K_DOWN:
+                if e.type == pygame.KEYDOWN and e.key == pygame.K_s:
                     down = True
 
-                if e.type == pygame.KEYUP and e.key == pygame.K_UP:
+                if e.type == pygame.KEYUP and e.key == pygame.K_w:
                     up = False
-                if e.type == pygame.KEYUP and e.key == pygame.K_RIGHT:
-                    right = False
-                if e.type == pygame.KEYUP and e.key == pygame.K_LEFT:
+                if e.type == pygame.KEYUP and e.key == pygame.K_a:
                     left = False
-                if e.type == pygame.KEYUP and e.key == pygame.K_DOWN:
+                if e.type == pygame.KEYUP and e.key == pygame.K_d:
+                    right = False
+                if e.type == pygame.KEYUP and e.key == pygame.K_s:
                     down = False
             display.blit(bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
             camera.update(hero)  # центризируем камеру относительно персонажа
