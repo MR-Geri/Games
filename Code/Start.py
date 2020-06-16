@@ -21,7 +21,7 @@ EXIT = False
 GAME = False
 FLAG = [NEW_GAME, OK_LOAD, LOAD_GAME, MENU, OPTION, EXIT, GAME, ESC_MENU]
 # Для сохранения карты
-save_map_y = []
+save_map = []
 # Для карты и камеры
 entity = None
 hero = None
@@ -46,7 +46,6 @@ person = None
 active_display = 0
 FullScreen = False
 volume = float(json.load(open('../Save_Loading/settings.json')))
-DATA_SAVE = json.load(open('../Save_Loading/save.json'))
 
 
 def is_active_display():
@@ -139,6 +138,11 @@ class Button:
 def start_game():
     def esc_menu():
         global flag_esc_menu
+
+        def back_to_menu():
+            save_game()
+            menu()
+
         flag_esc_menu = True
         continue_button = Button(w=480, h=50, x=145, y=14)
         save_button = Button(w=480, h=50, x=120, y=14)
@@ -154,7 +158,7 @@ def start_game():
             save_button.draw(720, 455, 'Сохранить игру', save_game)
             load_button.draw_act(720, 515, 'Загрузить игру', load_game, act='esc', time_sleep=0.25)
             option_button.draw_act(720, 575, 'Настройки', options_game, act='esc')
-            menu_button.draw(720, 635, 'Выход в главное меню', menu)
+            menu_button.draw(720, 635, 'Выход в главное меню', back_to_menu)
             for i in pygame.event.get():
                 if i.type == pygame.QUIT:
                     pygame.quit()
@@ -163,7 +167,7 @@ def start_game():
                     game()
             pygame.display.update()
 
-    def gen_map(map_saves=None):
+    def gen_map(data_saves=None):
         class Map(pygame.sprite.Sprite):
             def __init__(self, x, y, graphic_sell):
                 pygame.sprite.Sprite.__init__(self)
@@ -196,7 +200,7 @@ def start_game():
                 pygame.sprite.Sprite.__init__(self)
                 self.x_vel = 0  # скорость перемещения. 0 - стоять на месте
                 self.y_vel = 0  # скорость вертикального перемещения
-                self.image = pygame.Surface((120, 120))
+                self.image = pygame.Surface((0, 0))
                 self.rect = pygame.Rect(x, y, 120, 120)  # прямоугольный объект
 
             def update(self, left, right, up, down):
@@ -247,7 +251,7 @@ def start_game():
                 self.rect.x += self.x_vel
                 left_h = right_h = up_h = down_h = False
 
-        global save_map_y, entity, cams, camera, hero
+        global save_map, entity, cams, camera, hero
         # Загрузочный экран
         display.blit(back_menu, (0, 0))
         pygame.draw.rect(display, (212, 92, 0), (850, 510, 245, 45))
@@ -256,18 +260,21 @@ def start_game():
         #
         total_width = QUANTITY_SELL[0] * SIZE_SELL  # Высчитываем фактическую ширину уровня
         total_height = QUANTITY_SELL[1] * SIZE_SELL  # высоту
-        cams = Cums(51 * SIZE_SELL, 51 * SIZE_SELL + 60)
-        hero = Hero(51 * SIZE_SELL, 51 * SIZE_SELL)
         entity = pygame.sprite.Group()  # Все объекты
-        entity.add(cams)
-        if map_saves is not None:
+        if data_saves is not None:
             # Загрузка карты
+            save_map = []
             for y in range(QUANTITY_SELL[1]):
+                save_map_x = ''
                 for x in range(QUANTITY_SELL[0]):
-                    entity.add(Map(int(x) * 120, int(y) * 120, data_sell[int(map_saves[int(y)][int(x)])]))
-        elif map_saves is None:
+                    save_map_x += str(int(data_saves[0][int(y)][int(x)]))
+                    entity.add(Map(int(x) * 120, int(y) * 120, data_sell[int(data_saves[0][int(y)][int(x)])]))
+                save_map.append(save_map_x)
+            hero = Hero(*data_saves[1])
+            cams = Cums(*data_saves[2])
+        elif data_saves is None:
             # Создание и сохранение карты
-            save_map_y = []
+            save_map = []
             for y in range(QUANTITY_SELL[1]):
                 save_map_x = ''
                 for x in range(QUANTITY_SELL[0]):
@@ -277,39 +284,48 @@ def start_game():
                         graphic_cell = random.choice(data_sell[1:])
                     save_map_x += str(data_sell.index(graphic_cell))
                     entity.add(Map(x * 120, y * 120, graphic_cell))
-                save_map_y.append(save_map_x)
+                save_map.append(save_map_x)
+            hero = Hero(51 * SIZE_SELL, 51 * SIZE_SELL)
+            cams = Cums(51 * SIZE_SELL, 51 * SIZE_SELL + 60)
+        entity.add(cams)
         entity.add(hero)
         camera = Camera(camera_configure, total_width, total_height)
 
     def save_game():
-        global person, save_map_y, flag_esc_menu
+        global person, save_map, flag_esc_menu, hero
         if flag_esc_menu:
-            if person is not None:
-                data_t = [[], []]
-                data_t[0] = save_map_y
-                for pers in person.personalities:
-                    temp = [pers.name, pers.surname, pers.age, list(pers.special), list(pers.skills), list(pers.buff),
-                            list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.control, pers.stress,
-                            pers.left_arm, pers.right_arm, pers.back, pers.pockets]
-                    data_t[-1].append(temp)
-                try:
-                    data = json.load(open('../Save_Loading/save.json'))
-                except:
-                    data = []
-                if data_t in data:
-                    data[data.index(data_t)] = data_t
+            # Карта. Персонажи. Положение картинки игрока. Положение камеры.
+            data_t = [[], [], [], []]
+            data_t[0] = save_map
+            for pers in person.personalities:
+                temp = [pers.name, pers.surname, pers.age, list(pers.special), list(pers.skills), list(pers.buff),
+                        list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.control, pers.stress,
+                        pers.left_arm, pers.right_arm, pers.back, pers.pockets]
+                data_t[1].append(temp)
+            data_t[2] = [hero.rect.x, hero.rect.y]
+            data_t[3] = [cams.rect.x, cams.rect.y]
+            # сохранение или замена
+            try:
+                data = json.load(open('../Save_Loading/save.json'))
+            except:
+                data = []
+            flag = True
+            for i in data:
+                if data_t[0] == i[0]:
+                    data[data.index(i)] = data_t
                     print('Сохранение заменено.')
-                else:
-                    data.append(data_t)
-                    print('Сохранение создано.')
-
-                with open('../Save_Loading/save.json', 'w') as file:
-                    json.dump(data, file, indent=2, ensure_ascii=False)
-                flag_esc_menu = False
-            else:
-                print('Игра не создана.')
+                    flag = False
+                    break
+            if flag:
+                data.append(data_t)
+                print('Сохранение создано.')
+            with open('../Save_Loading/save.json', 'w') as file:
+                json.dump(data, file, indent=2, ensure_ascii=False)
+            flag_esc_menu = False
 
     def load_game(flag):
+        DATA_SAVE = json.load(open('../Save_Loading/save.json'))
+
         def helper_load(number):
             global person
             per = DATA_SAVE[number][1]
@@ -329,7 +345,7 @@ def start_game():
                 person.personalities[pers].right_arm = per[pers][13]
                 person.personalities[pers].back, person.personalities[pers].pockets = per[pers][14], per[pers][15]
             print(person)
-            gen_map(DATA_SAVE[number][0])
+            gen_map([DATA_SAVE[number][0], DATA_SAVE[number][2], DATA_SAVE[number][3]])
             game()
             print(f'Игра загружена.')
 
