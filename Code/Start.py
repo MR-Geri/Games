@@ -7,6 +7,7 @@ import time
 
 
 FPS = 60
+timer = pygame.time.Clock()
 # Flag
 flag_esc_menu = True
 # Флаги для циклов
@@ -22,8 +23,9 @@ FLAG = [NEW_GAME, OK_LOAD, LOAD_GAME, MENU, OPTION, EXIT, GAME, ESC_MENU]
 # Для сохранения карты
 save_map_y = []
 # Для карты и камеры
-MAP = None
+entity = None
 hero = None
+cams = None
 camera = None
 # Для камеры, движения и карты
 WIN_WIDTH = 1920
@@ -32,8 +34,8 @@ QUANTITY_SELL = (101, 101)
 SIZE_SELL = 120
 COLOR = "#888888"
 MOVE = 10
-left = right = False
-up = down = False
+left = right = up = down = False
+left_h = right_h = up_h = down_h = False
 # Ячейки для карты
 data_sell = ['cell.jpg', 'cell_0.jpg', 'cell_1.jpg', 'cell_2.jpg', 'cell_3.jpg', 'cell_4.jpg']
 # Левый клик
@@ -215,7 +217,37 @@ def start_game():
                 self.rect.y += self.y_vel
                 self.rect.x += self.x_vel
 
-        global save_map_y, MAP, hero, camera
+        class Hero(pygame.sprite.Sprite):
+            def __init__(self, x, y):
+                pygame.sprite.Sprite.__init__(self)
+                self.x_vel = 0  # скорость перемещения. 0 - стоять на месте
+                self.y_vel = 0  # скорость вертикального перемещения
+                self.image = pygame.Surface((120, 120))
+                self.image = pygame.image.load("../Data/player.png")
+                self.image = pygame.transform.scale(self.image, (120, 120))
+                self.rect = pygame.Rect(x, y, 120, 120)  # прямоугольный объект
+
+            def update(self):
+                global left_h, right_h, up_h, down_h
+                self.x_vel = 0
+                self.y_vel = 0
+                if up_h and self.rect.y > 540:
+                    self.y_vel = -120
+
+                if down_h and self.rect.y < total_height - 540:
+                    self.y_vel = 120
+
+                if left_h and self.rect.x > 960:
+                    self.x_vel = -120  # Лево = x- n
+
+                if right_h and self.rect.x < total_width - 960:
+                    self.x_vel = 120  # Право = x + n
+
+                self.rect.y += self.y_vel
+                self.rect.x += self.x_vel
+                left_h = right_h = up_h = down_h = False
+
+        global save_map_y, entity, cams, camera, hero
         # Загрузочный экран
         display.blit(back_menu, (0, 0))
         pygame.draw.rect(display, (212, 92, 0), (850, 510, 245, 45))
@@ -224,14 +256,15 @@ def start_game():
         #
         total_width = QUANTITY_SELL[0] * SIZE_SELL  # Высчитываем фактическую ширину уровня
         total_height = QUANTITY_SELL[1] * SIZE_SELL  # высоту
-        hero = Cums(51 * SIZE_SELL, 51 * SIZE_SELL + 60)
-        MAP = pygame.sprite.Group()  # Все объекты
-        MAP.add(hero)
+        cams = Cums(51 * SIZE_SELL, 51 * SIZE_SELL + 60)
+        hero = Hero(51 * SIZE_SELL, 51 * SIZE_SELL)
+        entity = pygame.sprite.Group()  # Все объекты
+        entity.add(cams)
         if map_saves is not None:
             # Загрузка карты
             for y in range(QUANTITY_SELL[1]):
                 for x in range(QUANTITY_SELL[0]):
-                    MAP.add(Map(int(x) * 120, int(y) * 120, data_sell[int(map_saves[int(y)][int(x)])]))
+                    entity.add(Map(int(x) * 120, int(y) * 120, data_sell[int(map_saves[int(y)][int(x)])]))
         elif map_saves is None:
             # Создание и сохранение карты
             save_map_y = []
@@ -243,10 +276,10 @@ def start_game():
                     else:
                         graphic_cell = random.choice(data_sell[1:])
                     save_map_x += str(data_sell.index(graphic_cell))
-                    MAP.add(Map(x * 120, y * 120, graphic_cell))
+                    entity.add(Map(x * 120, y * 120, graphic_cell))
                 save_map_y.append(save_map_x)
+        entity.add(hero)
         camera = Camera(camera_configure, total_width, total_height)
-        return MAP, hero, camera
 
     def save_game():
         global person, save_map_y, flag_esc_menu
@@ -309,7 +342,7 @@ def start_game():
                     helper_load(self.n)
                 else:
                     if flag == 'esc':
-                        for e in MAP:
+                        for e in entity:
                             display.blit(e.image, camera.apply(e))
                     else:
                         display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
@@ -420,12 +453,13 @@ def start_game():
             pygame.display.update()
 
     def game():
-        global left, right, up, down
-        global MAP, hero, camera
+        global left, right, up, down, left_h, right_h, up_h, down_h
+        global entity, cams, camera
         display.blit(back_menu, (0, 0))
         flag_all_false()
         FLAG[GAME] = True
         while FLAG[GAME]:
+            timer.tick(FPS)
             is_active_display()
             for e in pygame.event.get():
                 if e.type == pygame.QUIT:
@@ -451,10 +485,20 @@ def start_game():
                     right = False
                 if e.type == pygame.KEYUP and e.key == pygame.K_s:
                     down = False
+
+                if e.type == pygame.KEYDOWN and e.key == pygame.K_UP:
+                    up_h = True
+                if e.type == pygame.KEYDOWN and e.key == pygame.K_LEFT:
+                    left_h = True
+                if e.type == pygame.KEYDOWN and e.key == pygame.K_RIGHT:
+                    right_h = True
+                if e.type == pygame.KEYDOWN and e.key == pygame.K_DOWN:
+                    down_h = True
             display.blit(bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
-            camera.update(hero)  # центризируем камеру относительно персонажа
-            hero.update(left, right, up, down)  # передвижение
-            for e in MAP:
+            camera.update(cams)  # центризируем камеру относительно персонажа
+            cams.update(left, right, up, down)  # передвижение
+            hero.update()
+            for e in entity:
                 display.blit(e.image, camera.apply(e))
 
             pygame.display.update()  # обновление и вывод всех изменений на экран
@@ -528,7 +572,6 @@ def start_game():
         back_menu = pygame.image.load('../Data/menu.jpg')
         display.blit(back_menu, (0, 0))
         bg = pygame.Surface((WIN_WIDTH, WIN_HEIGHT))
-        # clock = pygame.time.Clock() ---- clock.tick(FPS)
         pygame.mixer_music.load('../Data/menu.mp3')
         pygame.mixer_music.set_volume(volume)
         pygame.mixer_music.play(-1)
