@@ -39,7 +39,7 @@ left_h = right_h = up_h = down_h = False
 # Ячейки для карты
 data_sell = ['cell.jpg', 'cell_0.jpg', 'cell_1.jpg', 'cell_2.jpg', 'cell_3.jpg', 'cell_4.jpg']
 # Левый клик
-click_left = False
+button_click_left = False
 # Персонаж
 person = None
 # Настройки
@@ -75,14 +75,14 @@ class Button:
         self.ots_x, self.ots_y = x, y
 
     def draw(self, x, y, message=None, action=None, size=30, time_sleep=0.0):
-        global click_left
+        global button_click_left
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if x < mouse[0] < x + self.w and y < mouse[1] < y + self.h:
             pygame.draw.rect(display, self.active_color, (x, y, self.w, self.h))
-            flag = 0 if click_left is False else 1
-            click_left = True if click[0] == 1 and flag == 0 else False
-            if click_left and action is not None:
+            flag = 0 if button_click_left is False else 1
+            button_click_left = True if click[0] == 1 and flag == 0 else False
+            if button_click_left and action is not None:
                 if action is quit:
                     pygame.quit()
                     quit()
@@ -94,14 +94,14 @@ class Button:
         print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
 
     def draw_act(self, x, y, message=None, action=None, size=30, act=(), time_sleep=0.0):
-        global click_left
+        global button_click_left
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if x < mouse[0] < x + self.w and y < mouse[1] < y + self.h:
             pygame.draw.rect(display, self.active_color, (x, y, self.w, self.h))
-            flag = 0 if click_left is False else 1
-            click_left = True if click[0] == 1 and flag == 0 else False
-            if click_left and action is not None:
+            flag = 0 if button_click_left is False else 1
+            button_click_left = True if click[0] == 1 and flag == 0 else False
+            if button_click_left and action is not None:
                 if action is quit:
                     pygame.quit()
                     quit()
@@ -113,16 +113,16 @@ class Button:
         print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
 
     def draw_info(self, x, y, message=None, action=None, action_info=None, size=30):
-        global click_left
+        global button_click_left
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if x < mouse[0] < x + self.w and y < mouse[1] < y + self.h:
             pygame.draw.rect(display, self.active_color, (x, y, self.w, self.h))
             pygame.draw.rect(display, self.inactive_color, (680, 700, 980, 600))
             print_text(action_info(), 700, 720)
-            flag = 0 if click_left is False else 1
-            click_left = True if click[0] == 1 and flag == 0 else False
-            if click_left and action is not None:
+            flag = 0 if button_click_left is False else 1
+            button_click_left = True if click[0] == 1 and flag == 0 else False
+            if button_click_left and action is not None:
                 if action is quit:
                     pygame.quit()
                     quit()
@@ -235,6 +235,15 @@ def start_game():
                 global left_h, right_h, up_h, down_h
                 self.x_vel = 0
                 self.y_vel = 0
+                # координата камеры
+                local_x = (self.rect.x / 120 - cams.rect.x / 120) * 120 + 9 * 120
+                local_y = (self.rect.y / 120 - cams.rect.y / 120) * 120 + 5 * 120
+                mouse = pygame.mouse.get_pos()
+                click = pygame.mouse.get_pressed()
+                if local_x - 120 < mouse[0] < self.rect.x and local_y - 120 < mouse[1] < local_y and \
+                        click[0] == 1:
+                    print('нажатие')
+
                 if up_h and self.rect.y > 540:
                     self.y_vel = -120
 

@@ -37,7 +37,7 @@ up = down = False
 # Ячейки для карты
 data_sell = ['cell.jpg', 'cell_0.jpg', 'cell_1.jpg', 'cell_2.jpg', 'cell_3.jpg', 'cell_4.jpg']
 # Левый клик
-click_left = False
+button_click_left = False
 # Персонаж
 person = None
 # Настройки
@@ -74,7 +74,7 @@ class Button:
         self.ots_x, self.ots_y = x, y
 
     def draw(self, x, y, message=None, action=None, size=30, time_sleep=0.0):
-        global click_left
+        global button_click_left
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if x < mouse[0] < x + self.w and y < mouse[1] < y + self.h:
@@ -93,7 +93,7 @@ class Button:
         print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
 
     def draw_act(self, x, y, message=None, action=None, size=30, act=(), time_sleep=0.0):
-        global click_left
+        global button_click_left
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if x < mouse[0] < x + self.w and y < mouse[1] < y + self.h:
@@ -112,7 +112,7 @@ class Button:
         print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
 
     def draw_info(self, x, y, message=None, action=None, action_info=None, size=30):
-        global click_left
+        global button_click_left
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if x < mouse[0] < x + self.w and y < mouse[1] < y + self.h:
