@@ -38,6 +38,8 @@ left = right = up = down = False
 left_h = right_h = up_h = down_h = False
 # Ячейки для карты
 data_sell = ['cell.jpg', 'cell_0.jpg', 'cell_1.jpg', 'cell_2.jpg', 'cell_3.jpg', 'cell_4.jpg']
+data_sell_active = ['cell_ellipse.jpg', 'cell_ellipse_0.jpg', 'cell_ellipse_1.jpg', 'cell_ellipse_2.jpg',
+                    'cell_ellipse_3.jpg', 'cell_ellipse_4.jpg']
 # Левый клик
 button_click_left = False
 # Персонаж
@@ -172,7 +174,7 @@ def start_game():
             def __init__(self, x, y, graphic_sell):
                 pygame.sprite.Sprite.__init__(self)
                 self.image = pygame.image.load(f'../Data/data_sell/{graphic_sell}')
-                self.rect = self.image.get_rect(center=(x + 60, y + 60))
+                self.rect = self.image.get_rect(center=(x + SIZE_SELL // 2, y + SIZE_SELL // 2))
 
         class Camera(object):
             def __init__(self, camera_func, width, height):
@@ -201,7 +203,7 @@ def start_game():
                 self.x_vel = 0  # скорость перемещения. 0 - стоять на месте
                 self.y_vel = 0  # скорость вертикального перемещения
                 self.image = pygame.Surface((0, 0))
-                self.rect = pygame.Rect(x, y, 120, 120)  # прямоугольный объект
+                self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)  # прямоугольный объект
 
             def update(self, left, right, up, down):
                 self.x_vel = 0
@@ -221,41 +223,62 @@ def start_game():
                 self.rect.y += self.y_vel
                 self.rect.x += self.x_vel
 
+        class Event_hero(pygame.sprite.Sprite):
+            def __init__(self, x, y, flag):
+                global save_map
+                pygame.sprite.Sprite.__init__(self)
+                print(flag)
+                if flag % 2 == 0:
+                    self.image = pygame.image.load(f'../Data/data_sell/'
+                                                   f'{data_sell_active[int(save_map[y // SIZE_SELL][x // SIZE_SELL])]}')
+                    self.rect = self.image.get_rect(center=(x + SIZE_SELL // 2, y + SIZE_SELL // 2))
+                else:
+                    self.image = pygame.image.load(f'../Data/data_sell/'
+                                                   f'{data_sell[int(save_map[y // SIZE_SELL][x // SIZE_SELL])]}')
+                    self.rect = self.image.get_rect(center=(x + SIZE_SELL // 2, y + SIZE_SELL // 2))
+
         class Hero(pygame.sprite.Sprite):
             def __init__(self, x, y):
                 pygame.sprite.Sprite.__init__(self)
                 self.x_vel = 0  # скорость перемещения. 0 - стоять на месте
                 self.y_vel = 0  # скорость вертикального перемещения
-                self.image = pygame.Surface((120, 120))
+                self.image = pygame.Surface((SIZE_SELL, SIZE_SELL))
                 self.image = pygame.image.load("../Data/player.png")
-                self.image = pygame.transform.scale(self.image, (120, 120))
-                self.rect = pygame.Rect(x, y, 120, 120)  # прямоугольный объект
+                self.image = pygame.transform.scale(self.image, (SIZE_SELL, SIZE_SELL))
+                self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)  # прямоугольный объект
+                self.last_left_click, self.last_right_click = 0, 0
+                self.col_vo_click = 0
 
-            def update(self):
+            def update(self, mouse):
                 global left_h, right_h, up_h, down_h
                 self.x_vel = 0
                 self.y_vel = 0
                 # координата камеры
-                local_x = (self.rect.x / 120 - cams.rect.x / 120) * 120 + 9 * 120
-                local_y = (self.rect.y / 120 - cams.rect.y / 120) * 120 + 5 * 120
-                mouse = pygame.mouse.get_pos()
-                click = pygame.mouse.get_pressed()
-                if local_x - 120 < mouse[0] < self.rect.x and local_y - 120 < mouse[1] < local_y and \
-                        click[0] == 1:
-                    print('нажатие')
-
+                local_x = (self.rect.x / SIZE_SELL - cams.rect.x / SIZE_SELL) * SIZE_SELL + 9 * SIZE_SELL
+                local_y = (self.rect.y / SIZE_SELL - cams.rect.y / SIZE_SELL) * SIZE_SELL + 5 * SIZE_SELL
+                # Нажатие по персонажу ЛКМ
+                if local_x - SIZE_SELL < mouse[0] < local_x and \
+                        local_y - SIZE_SELL / 2 < mouse[1] < local_y + SIZE_SELL / 2 and \
+                        pygame.mouse.get_pressed()[0] == 1 and self.last_left_click == 0:
+                    self.col_vo_click += 1
+                    self.col_vo_click = 0 if self.col_vo_click > 3 else self.col_vo_click
+                    for i in range(-3, 4, 1):
+                        for j in range(-3, 4, 1):
+                            if i == 0 and j == 0:
+                                pass
+                            else:
+                                entity.add(Event_hero(self.rect.x + SIZE_SELL * i, self.rect.y + SIZE_SELL * j,
+                                                      self.col_vo_click))
+                self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
+                #
                 if up_h and self.rect.y > 540:
-                    self.y_vel = -120
-
+                    self.y_vel = -SIZE_SELL
                 if down_h and self.rect.y < total_height - 540:
-                    self.y_vel = 120
-
+                    self.y_vel = SIZE_SELL
                 if left_h and self.rect.x > 960:
-                    self.x_vel = -120  # Лево = x- n
-
+                    self.x_vel = -SIZE_SELL  # Лево = x- n
                 if right_h and self.rect.x < total_width - 960:
-                    self.x_vel = 120  # Право = x + n
-
+                    self.x_vel = SIZE_SELL  # Право = x + n
                 self.rect.y += self.y_vel
                 self.rect.x += self.x_vel
                 left_h = right_h = up_h = down_h = False
@@ -277,7 +300,8 @@ def start_game():
                 save_map_x = ''
                 for x in range(QUANTITY_SELL[0]):
                     save_map_x += str(int(data_saves[0][int(y)][int(x)]))
-                    entity.add(Map(int(x) * 120, int(y) * 120, data_sell[int(data_saves[0][int(y)][int(x)])]))
+                    entity.add(Map(int(x) * SIZE_SELL, int(y) * SIZE_SELL,
+                                   data_sell[int(data_saves[0][int(y)][int(x)])]))
                 save_map.append(save_map_x)
             hero = Hero(*data_saves[1])
             cams = Cums(*data_saves[2])
@@ -292,10 +316,10 @@ def start_game():
                     else:
                         graphic_cell = random.choice(data_sell[1:])
                     save_map_x += str(data_sell.index(graphic_cell))
-                    entity.add(Map(x * 120, y * 120, graphic_cell))
+                    entity.add(Map(x * SIZE_SELL, y * SIZE_SELL, graphic_cell))
                 save_map.append(save_map_x)
             hero = Hero(51 * SIZE_SELL, 51 * SIZE_SELL)
-            cams = Cums(51 * SIZE_SELL, 51 * SIZE_SELL + 60)
+            cams = Cums(51 * SIZE_SELL, 51 * SIZE_SELL + SIZE_SELL / 2)
         entity.add(cams)
         entity.add(hero)
         camera = Camera(camera_configure, total_width, total_height)
@@ -478,7 +502,7 @@ def start_game():
             pygame.display.update()
 
     def game():
-        global left, right, up, down, left_h, right_h, up_h, down_h
+        global left, right, up, down, left_h, right_h, up_h, down_h, left_click
         global entity, cams, camera
         display.blit(back_menu, (0, 0))
         flag_all_false()
@@ -511,18 +535,10 @@ def start_game():
                 if e.type == pygame.KEYUP and e.key == pygame.K_s:
                     down = False
 
-                if e.type == pygame.KEYDOWN and e.key == pygame.K_UP:
-                    up_h = True
-                if e.type == pygame.KEYDOWN and e.key == pygame.K_LEFT:
-                    left_h = True
-                if e.type == pygame.KEYDOWN and e.key == pygame.K_RIGHT:
-                    right_h = True
-                if e.type == pygame.KEYDOWN and e.key == pygame.K_DOWN:
-                    down_h = True
             display.blit(bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
             camera.update(cams)  # центризируем камеру относительно персонажа
             cams.update(left, right, up, down)  # передвижение
-            hero.update()
+            hero.update(pygame.mouse.get_pos())
             for e in entity:
                 display.blit(e.image, camera.apply(e))
 
