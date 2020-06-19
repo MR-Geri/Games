@@ -173,8 +173,17 @@ def start_game():
         class Map(pygame.sprite.Sprite):
             def __init__(self, x, y, graphic_sell):
                 pygame.sprite.Sprite.__init__(self)
+                self.sell = graphic_cell
                 self.image = pygame.image.load(f'../Data/data_sell/{graphic_sell}')
                 self.rect = self.image.get_rect(center=(x + SIZE_SELL // 2, y + SIZE_SELL // 2))
+
+            def per(self, x, y, flag):
+                if flag % 2 != 0:
+                    self.image = pygame.image.load(f'../Data/data_sell/'
+                                                   f'{data_sell_active[int(save_map[y // SIZE_SELL][x // SIZE_SELL])]}')
+                else:
+                    self.image = pygame.image.load(f'../Data/data_sell/'
+                                                   f'{data_sell[int(save_map[y // SIZE_SELL][x // SIZE_SELL])]}')
 
         class Camera(object):
             def __init__(self, camera_func, width, height):
@@ -223,20 +232,6 @@ def start_game():
                 self.rect.y += self.y_vel
                 self.rect.x += self.x_vel
 
-        class Event_hero(pygame.sprite.Sprite):
-            def __init__(self, x, y, flag):
-                global save_map
-                pygame.sprite.Sprite.__init__(self)
-                print(flag)
-                if flag % 2 == 0:
-                    self.image = pygame.image.load(f'../Data/data_sell/'
-                                                   f'{data_sell_active[int(save_map[y // SIZE_SELL][x // SIZE_SELL])]}')
-                    self.rect = self.image.get_rect(center=(x + SIZE_SELL // 2, y + SIZE_SELL // 2))
-                else:
-                    self.image = pygame.image.load(f'../Data/data_sell/'
-                                                   f'{data_sell[int(save_map[y // SIZE_SELL][x // SIZE_SELL])]}')
-                    self.rect = self.image.get_rect(center=(x + SIZE_SELL // 2, y + SIZE_SELL // 2))
-
         class Hero(pygame.sprite.Sprite):
             def __init__(self, x, y):
                 pygame.sprite.Sprite.__init__(self)
@@ -267,8 +262,12 @@ def start_game():
                             if i == 0 and j == 0:
                                 pass
                             else:
-                                entity.add(Event_hero(self.rect.x + SIZE_SELL * i, self.rect.y + SIZE_SELL * j,
-                                                      self.col_vo_click))
+                                for e1 in entity:
+                                    if e1.rect.x == self.rect.x + SIZE_SELL * i and \
+                                            e1.rect.y == self.rect.y + SIZE_SELL * j:
+                                        e1.per(self.rect.x + SIZE_SELL * i,
+                                               self.rect.y + SIZE_SELL * j,
+                                               self.col_vo_click)
                 self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
                 #
                 if up_h and self.rect.y > 540:
@@ -293,6 +292,7 @@ def start_game():
         total_width = QUANTITY_SELL[0] * SIZE_SELL  # Высчитываем фактическую ширину уровня
         total_height = QUANTITY_SELL[1] * SIZE_SELL  # высоту
         entity = pygame.sprite.Group()  # Все объекты
+        maps = pygame.sprite.Group()
         if data_saves is not None:
             # Загрузка карты
             save_map = []
@@ -316,10 +316,11 @@ def start_game():
                     else:
                         graphic_cell = random.choice(data_sell[1:])
                     save_map_x += str(data_sell.index(graphic_cell))
-                    entity.add(Map(x * SIZE_SELL, y * SIZE_SELL, graphic_cell))
+                    maps.add(Map(x * SIZE_SELL, y * SIZE_SELL, graphic_cell))
                 save_map.append(save_map_x)
             hero = Hero(51 * SIZE_SELL, 51 * SIZE_SELL)
-            cams = Cums(51 * SIZE_SELL, 51 * SIZE_SELL + SIZE_SELL / 2)
+            cams = Cums(51 * SIZE_SELL, 51 * SIZE_SELL + SIZE_SELL // 2)
+            entity.add(maps)
         entity.add(cams)
         entity.add(hero)
         camera = Camera(camera_configure, total_width, total_height)
