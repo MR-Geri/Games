@@ -13,20 +13,20 @@ flag_esc_menu = True
 # Флаги для циклов
 ESC_MENU = False
 NEW_GAME = False
-OK_LOAD = False
+PRELOAD = False
+PRELOAD_MENU = False
+DELL_GAME = False
 LOAD_GAME = False
 MENU = False
 OPTION = False
 EXIT = False
 GAME = False
-FLAG = [NEW_GAME, OK_LOAD, LOAD_GAME, MENU, OPTION, EXIT, GAME, ESC_MENU]
+FLAG = [NEW_GAME, PRELOAD, PRELOAD_MENU, DELL_GAME, LOAD_GAME, MENU, OPTION, EXIT, GAME, ESC_MENU]
 # Для сохранения карты
 save_map = []
-# Для карты и камеры
-entity = None
-hero = None
-cams = None
+# Все объекты
 camera = None
+all_entity = None
 # Для камеры, движения и карты
 WIN_WIDTH = 1920
 WIN_HEIGHT = 1080
@@ -169,21 +169,31 @@ def start_game():
                     game()
             pygame.display.update()
 
-    def gen_map(data_saves=None):
+    def working_objects(data_saves=None):
+        class Updating:
+            def __init__(self, map, hero, cam):
+                self.map = map
+                self.cam = cam
+                self.hero = hero
+
+            def update(self):
+                display.blit(bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
+                camera.update(self.cam)  # центризируем камеру относительно персонажа
+                self.cam.update(left, right, up, down)  # передвижение
+                self.hero.update(pygame.mouse.get_pos())
+                # отрисовка карты
+                for i in self.map:
+                    for g in i:
+                        display.blit(g.image, camera.apply(g))
+                #
+                display.blit(self.hero.image, camera.apply(self.hero))  # отрисовка персонажа
+                pygame.display.update()
+
         class Map(pygame.sprite.Sprite):
             def __init__(self, x, y, graphic_sell):
                 pygame.sprite.Sprite.__init__(self)
-                self.sell = graphic_cell
                 self.image = pygame.image.load(f'../Data/data_sell/{graphic_sell}')
                 self.rect = self.image.get_rect(center=(x + SIZE_SELL // 2, y + SIZE_SELL // 2))
-
-            def per(self, x, y, flag):
-                if flag % 2 != 0:
-                    self.image = pygame.image.load(f'../Data/data_sell/'
-                                                   f'{data_sell_active[int(save_map[y // SIZE_SELL][x // SIZE_SELL])]}')
-                else:
-                    self.image = pygame.image.load(f'../Data/data_sell/'
-                                                   f'{data_sell[int(save_map[y // SIZE_SELL][x // SIZE_SELL])]}')
 
         class Camera(object):
             def __init__(self, camera_func, width, height):
@@ -249,25 +259,24 @@ def start_game():
                 self.x_vel = 0
                 self.y_vel = 0
                 # координата камеры
-                local_x = (self.rect.x / SIZE_SELL - cams.rect.x / SIZE_SELL) * SIZE_SELL + 9 * SIZE_SELL
-                local_y = (self.rect.y / SIZE_SELL - cams.rect.y / SIZE_SELL) * SIZE_SELL + 5 * SIZE_SELL
+                local_x = (self.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) * SIZE_SELL + 9 * SIZE_SELL
+                local_y = (self.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) * SIZE_SELL + 5 * SIZE_SELL
                 # Нажатие по персонажу ЛКМ
                 if local_x - SIZE_SELL < mouse[0] < local_x and \
                         local_y - SIZE_SELL / 2 < mouse[1] < local_y + SIZE_SELL / 2 and \
                         pygame.mouse.get_pressed()[0] == 1 and self.last_left_click == 0:
                     self.col_vo_click += 1
                     self.col_vo_click = 0 if self.col_vo_click > 3 else self.col_vo_click
-                    for i in range(-3, 4, 1):
-                        for j in range(-3, 4, 1):
-                            if i == 0 and j == 0:
+                    for y in range(-3, 4, 1):
+                        for x in range(-3, 4, 1):
+                            if y == 0 and x == 0:
                                 pass
                             else:
-                                for e1 in entity:
-                                    if e1.rect.x == self.rect.x + SIZE_SELL * i and \
-                                            e1.rect.y == self.rect.y + SIZE_SELL * j:
-                                        e1.per(self.rect.x + SIZE_SELL * i,
-                                               self.rect.y + SIZE_SELL * j,
-                                               self.col_vo_click)
+                                position_x = self.rect.x // 120 + x
+                                position_y = self.rect.y // 120 + y
+                                sell = data_sell_active[int(save_map[position_y][position_x])] \
+                                    if self.col_vo_click % 2 != 0 else data_sell[int(save_map[position_y][position_x])]
+                                all_entity.map[position_y][position_x] = Map(position_x * 120, position_y * 120, sell)
                 self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
                 #
                 if up_h and self.rect.y > 540:
@@ -282,7 +291,7 @@ def start_game():
                 self.rect.x += self.x_vel
                 left_h = right_h = up_h = down_h = False
 
-        global save_map, entity, cams, camera, hero
+        global save_map, camera, all_entity
         # Загрузочный экран
         display.blit(back_menu, (0, 0))
         pygame.draw.rect(display, (212, 92, 0), (850, 510, 245, 45))
@@ -291,42 +300,41 @@ def start_game():
         #
         total_width = QUANTITY_SELL[0] * SIZE_SELL  # Высчитываем фактическую ширину уровня
         total_height = QUANTITY_SELL[1] * SIZE_SELL  # высоту
-        entity = pygame.sprite.Group()  # Все объекты
-        maps = pygame.sprite.Group()
         if data_saves is not None:
             # Загрузка карты
-            save_map = []
+            map_y = []
+            save_map = data_saves[0]
             for y in range(QUANTITY_SELL[1]):
-                save_map_x = ''
+                map_x = []
                 for x in range(QUANTITY_SELL[0]):
-                    save_map_x += str(int(data_saves[0][int(y)][int(x)]))
-                    entity.add(Map(int(x) * SIZE_SELL, int(y) * SIZE_SELL,
-                                   data_sell[int(data_saves[0][int(y)][int(x)])]))
-                save_map.append(save_map_x)
-            hero = Hero(*data_saves[1])
-            cams = Cums(*data_saves[2])
+                    map_x.append(Map(x * SIZE_SELL, y * SIZE_SELL, data_sell[int(save_map[y][x])]))
+                map_y.append(map_x)
+            all_entity = Updating(map_y,
+                                  Hero(*data_saves[1]),
+                                  Cums(*data_saves[2]))
         elif data_saves is None:
             # Создание и сохранение карты
             save_map = []
+            map_y = []
             for y in range(QUANTITY_SELL[1]):
                 save_map_x = ''
+                map_x = []
                 for x in range(QUANTITY_SELL[0]):
                     if y == 51 and (x == 50 or x == 51):
                         graphic_cell = data_sell[0]
                     else:
                         graphic_cell = random.choice(data_sell[1:])
                     save_map_x += str(data_sell.index(graphic_cell))
-                    maps.add(Map(x * SIZE_SELL, y * SIZE_SELL, graphic_cell))
+                    map_x.append(Map(x * SIZE_SELL, y * SIZE_SELL, graphic_cell))
+                map_y.append(map_x)
                 save_map.append(save_map_x)
-            hero = Hero(51 * SIZE_SELL, 51 * SIZE_SELL)
-            cams = Cums(51 * SIZE_SELL, 51 * SIZE_SELL + SIZE_SELL // 2)
-            entity.add(maps)
-        entity.add(cams)
-        entity.add(hero)
+            all_entity = Updating(map_y,
+                                  Hero(51 * SIZE_SELL, 51 * SIZE_SELL),
+                                  Cums(51 * SIZE_SELL, 51 * SIZE_SELL + SIZE_SELL // 2))
         camera = Camera(camera_configure, total_width, total_height)
 
     def save_game():
-        global person, save_map, flag_esc_menu, hero
+        global person, save_map, flag_esc_menu
         if flag_esc_menu:
             # Карта. Персонажи. Положение картинки игрока. Положение камеры.
             data_t = [[], [], [], []]
@@ -336,8 +344,8 @@ def start_game():
                         list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.control, pers.stress,
                         pers.left_arm, pers.right_arm, pers.back, pers.pockets]
                 data_t[1].append(temp)
-            data_t[2] = [hero.rect.x, hero.rect.y]
-            data_t[3] = [cams.rect.x, cams.rect.y]
+            data_t[2] = [all_entity.hero.rect.x, all_entity.hero.rect.y]
+            data_t[3] = [all_entity.cam.rect.x, all_entity.cam.rect.y]
             # сохранение или замена
             try:
                 data = json.load(open('../Save_Loading/save.json'))
@@ -345,76 +353,131 @@ def start_game():
                 data = []
             flag = True
             for i in data:
-                if data_t[0] == i[0]:
+                if i is None:
+                    data[data.index(i)] = data_t
+                    print('Сохранение создано.')
+                    flag = False
+                    break
+                elif data_t[0] == i[0]:
                     data[data.index(i)] = data_t
                     print('Сохранение заменено.')
                     flag = False
                     break
             if flag:
-                data.append(data_t)
-                print('Сохранение создано.')
+                print('Сохранению не куда вставиться.')
             with open('../Save_Loading/save.json', 'w') as file:
                 json.dump(data, file, indent=2, ensure_ascii=False)
             flag_esc_menu = False
 
-    def load_game(flag):
+    def load_game(call):
         DATA_SAVE = json.load(open('../Save_Loading/save.json'))
 
-        def helper_load(number):
-            global person
-            per = DATA_SAVE[number][1]
-            person = Data_pers(len(per), True)
-            for pers in range(len(per)):
-                person.personalities[pers].name, person.personalities[pers].surname = per[pers][0], per[pers][1]
-                person.personalities[pers].age = per[pers][2]
-                person.personalities[pers].special = set(per[pers][3])
-                person.personalities[pers].skills = set(per[pers][4])
-                person.personalities[pers].buff = set(per[pers][5])
-                person.personalities[pers].de_buff = set(per[pers][6])
-                person.personalities[pers].hp = per[pers][7]
-                person.personalities[pers].hunger, person.personalities[pers].water = per[pers][8], per[pers][9]
-                person.personalities[pers].control, person.personalities[pers].stress = per[pers][10], per[pers][
-                    11]
-                person.personalities[pers].left_arm = per[pers][12]
-                person.personalities[pers].right_arm = per[pers][13]
-                person.personalities[pers].back, person.personalities[pers].pockets = per[pers][14], per[pers][15]
-            print(person)
-            gen_map([DATA_SAVE[number][0], DATA_SAVE[number][2], DATA_SAVE[number][3]])
-            game()
-            print(f'Игра загружена.')
+        def load(n):
+            def helper_load():
+                global person
+                per = DATA_SAVE[n][1]
+                person = Data_pers(len(per), True)
+                for pers in range(len(per)):
+                    person.personalities[pers].name, person.personalities[pers].surname = per[pers][0], per[pers][1]
+                    person.personalities[pers].age = per[pers][2]
+                    person.personalities[pers].special = set(per[pers][3])
+                    person.personalities[pers].skills = set(per[pers][4])
+                    person.personalities[pers].buff = set(per[pers][5])
+                    person.personalities[pers].de_buff = set(per[pers][6])
+                    person.personalities[pers].hp = per[pers][7]
+                    person.personalities[pers].hunger, person.personalities[pers].water = per[pers][8], per[pers][9]
+                    person.personalities[pers].control, person.personalities[pers].stress = per[pers][10], per[pers][
+                        11]
+                    person.personalities[pers].left_arm = per[pers][12]
+                    person.personalities[pers].right_arm = per[pers][13]
+                    person.personalities[pers].back, person.personalities[pers].pockets = per[pers][14], per[pers][15]
+                print(person)
+                working_objects([DATA_SAVE[n][0], DATA_SAVE[n][2], DATA_SAVE[n][3]])
+                print(f'Игра загружена.')
+                game()
 
-        class Helper_load:
-            def __init__(self, n):
-                self.n = n
-
-            def load(self):
-                if len(DATA_SAVE) > int(self.n):
-                    helper_load(self.n)
+            def del_game():
+                def dell():
+                    try:
+                        data = json.load(open('../Save_Loading/save.json'))
+                    except:
+                        data = [None, None, None, None, None]
+                    if data[n] is not None:
+                        data[n] = None
+                        with open('../Save_Loading/save.json', 'w') as file:
+                            json.dump(data, file, indent=2, ensure_ascii=False)
+                        print('Сохранение удалено.')
+                        menu()
+                # Удаление игры.
+                if call == 'esc':
+                    all_entity.update()
                 else:
-                    if flag == 'esc':
-                        for e in entity:
-                            display.blit(e.image, camera.apply(e))
-                    else:
-                        display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
-                    ok_button = Button(w=480, h=50, x=210, y=14)
-                    flag_all_false()
-                    FLAG[OK_LOAD] = True
-                    while FLAG[OK_LOAD]:
-                        is_active_display()
-                        pygame.draw.rect(display, (255, 255, 0), (700, 495, 520, 110))
-                        print_text(message='Сохранение не создано.', x=780, y=510, font_size=30)
-                        ok_button.draw(720, 545, 'Ок', back)
-                        for i in pygame.event.get():
-                            if i.type == pygame.QUIT:
-                                pygame.quit()
-                                quit()
-                            if i.type == pygame.KEYDOWN and i.key == pygame.K_ESCAPE:
-                                back()
-                        pygame.display.update()
+                    display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+                choice_button_no = Button(w=120, h=80, x=15, y=16)
+                choice_button_yes = Button(w=120, h=80, x=25, y=15)
+                flag_all_false()
+                FLAG[DELL_GAME] = True
+                while FLAG[DELL_GAME]:
+                    is_active_display()
+                    pygame.draw.rect(display, (255, 255, 0), (790, 510, 340, 100))
+                    choice_button_yes.draw(800, 520, 'Да', dell, 50)
+                    choice_button_no.draw(1000, 520, 'Нет', back, 50)
+                    for i in pygame.event.get():
+                        if i.type == pygame.QUIT:
+                            pygame.quit()
+                            quit()
+                        if i.type == pygame.KEYDOWN and i.key == pygame.K_ESCAPE:
+                            back()
+                    pygame.display.update()
 
-        if flag == 'esc':
+            def load_menu():
+                if call == 'esc':
+                    all_entity.update()
+                else:
+                    display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+                button_load = Button(w=480, h=50, x=170, y=14)
+                button_dell = Button(w=480, h=50, x=185, y=14)
+                flag_all_false()
+                FLAG[PRELOAD_MENU] = True
+                while FLAG[PRELOAD_MENU]:
+                    is_active_display()
+                    pygame.draw.rect(display, (255, 255, 0), (700, 480, 520, 125))
+                    button_load.draw(720, 490, 'Загрузить', helper_load)
+                    button_dell.draw(720, 545, 'Удалить', del_game)
+                    for i in pygame.event.get():
+                        if i.type == pygame.QUIT:
+                            pygame.quit()
+                            quit()
+                        if i.type == pygame.KEYDOWN and i.key == pygame.K_ESCAPE:
+                            back()
+                    pygame.display.update()
+
+            if DATA_SAVE[n] is not None:
+                load_menu()
+            else:
+                if call == 'esc':
+                    all_entity.update()
+                else:
+                    display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+                ok_button = Button(w=480, h=50, x=210, y=14)
+                flag_all_false()
+                FLAG[PRELOAD] = True
+                while FLAG[PRELOAD]:
+                    is_active_display()
+                    pygame.draw.rect(display, (255, 255, 0), (700, 495, 520, 110))
+                    print_text(message='Сохранение не создано.', x=780, y=510, font_size=30)
+                    ok_button.draw(720, 545, 'Ок', back)
+                    for i in pygame.event.get():
+                        if i.type == pygame.QUIT:
+                            pygame.quit()
+                            quit()
+                        if i.type == pygame.KEYDOWN and i.key == pygame.K_ESCAPE:
+                            back()
+                    pygame.display.update()
+
+        if call == 'esc':
             back = game
-        elif flag == 'menu':
+        elif call == 'menu':
             display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
             back = menu
         back_button = Button(w=110, h=50, y=14)
@@ -426,11 +489,11 @@ def start_game():
             is_active_display()
             pygame.draw.rect(display, (255, 255, 0), (700, 385, 520, 308))
             back_button.draw(10, 10, 'Назад', back, time_sleep=0.25)
-            saves_button.draw(720, 395, 'Ячейка 1.', Helper_load(0).load, time_sleep=0.25)
-            saves_button.draw(720, 455, 'Ячейка 2.', Helper_load(1).load, time_sleep=0.25)
-            saves_button.draw(720, 515, 'Ячейка 3.', Helper_load(2).load, time_sleep=0.25)
-            saves_button.draw(720, 575, 'Ячейка 4.', Helper_load(3).load, time_sleep=0.25)
-            saves_button.draw(720, 635, 'Ячейка 5.', Helper_load(4).load, time_sleep=0.25)
+            saves_button.draw_act(720, 395, 'Ячейка 1.', load, time_sleep=0.25, act=0)
+            saves_button.draw_act(720, 455, 'Ячейка 2.', load, time_sleep=0.25, act=1)
+            saves_button.draw_act(720, 515, 'Ячейка 3.', load, time_sleep=0.25, act=2)
+            saves_button.draw_act(720, 575, 'Ячейка 4.', load, time_sleep=0.25, act=3)
+            saves_button.draw_act(720, 635, 'Ячейка 5.', load, time_sleep=0.25, act=4)
             for i in pygame.event.get():
                 if i.type == pygame.QUIT:
                     pygame.quit()
@@ -439,7 +502,7 @@ def start_game():
                     back()
             pygame.display.update()
 
-    def options_game(flag):
+    def options_game(call):
         def volume_minus():
             global volume
             volume -= 0.001
@@ -455,9 +518,9 @@ def start_game():
                 json.dump(volume, file, indent=2, ensure_ascii=False)
             pygame.mixer_music.set_volume(volume)
 
-        if flag == 'esc':
+        if call == 'esc':
             back = game
-        elif flag == 'menu':
+        elif call == 'menu':
             display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
             back = menu
         back_button = Button(w=110, h=50, y=14)
@@ -503,8 +566,8 @@ def start_game():
             pygame.display.update()
 
     def game():
-        global left, right, up, down, left_h, right_h, up_h, down_h, left_click
-        global entity, cams, camera
+        global left, right, up, down, left_click
+        global camera, all_entity, display
         display.blit(back_menu, (0, 0))
         flag_all_false()
         FLAG[GAME] = True
@@ -536,14 +599,7 @@ def start_game():
                 if e.type == pygame.KEYUP and e.key == pygame.K_s:
                     down = False
 
-            display.blit(bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
-            camera.update(cams)  # центризируем камеру относительно персонажа
-            cams.update(left, right, up, down)  # передвижение
-            hero.update(pygame.mouse.get_pos())
-            for e in entity:
-                display.blit(e.image, camera.apply(e))
-
-            pygame.display.update()  # обновление и вывод всех изменений на экран
+            all_entity.update()
 
     class Presets:
         def __init__(self):
@@ -554,7 +610,7 @@ def start_game():
             if person is None:
                 person = Data_pers(1)
                 print(person)
-                gen_map()
+                working_objects()
                 save_game()
                 game()
 
