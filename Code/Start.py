@@ -36,7 +36,7 @@ WIN_HEIGHT = 1080
 QUANTITY_SELL = (101, 101)
 SIZE_SELL = 120
 COLOR = "#888888"
-CAMS_SPEED = 20
+CAMS_SPEED = 10
 # Ячейки для карты
 data_sell = ['cell.jpg', 'cell_0.jpg', 'cell_1.jpg', 'cell_2.jpg', 'cell_3.jpg', 'cell_4.jpg']
 data_sell_image = [pygame.image.load(f'../Data/data_sell/cell.jpg'),
@@ -61,6 +61,7 @@ key_e = 1  # 1 - закрыт.
 # Персонаж
 person = None
 # Настройки
+PERMISSION = (1920, 1080)
 FPS = 60
 active_display = 0
 FullScreen = False
@@ -462,7 +463,7 @@ def start_game():
                 if back == esc_menu:
                     all_entity.update()
                 else:
-                    display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+                    display.blit(pygame.image.frombuffer(blur(), PERMISSION, "RGB"), (0, 0))
                 choice_button_no = Button(w=120, h=80, x=15, y=16)
                 choice_button_yes = Button(w=120, h=80, x=25, y=15)
                 flag_all_false()
@@ -484,7 +485,7 @@ def start_game():
                 if back == esc_menu:
                     all_entity.update()
                 else:
-                    display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+                    display.blit(pygame.image.frombuffer(blur(), PERMISSION, "RGB"), (0, 0))
                 button_load = Button(w=480, h=50, x=170, y=14)
                 button_dell = Button(w=480, h=50, x=185, y=14)
                 flag_all_false()
@@ -508,7 +509,7 @@ def start_game():
                 if back == esc_menu or back == game:
                     all_entity.update()
                 else:
-                    display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+                    display.blit(pygame.image.frombuffer(blur(), PERMISSION, "RGB"), (0, 0))
                 ok_button = Button(w=480, h=50, x=210, y=14)
                 flag_all_false()
                 FLAG[PRELOAD] = True
@@ -577,7 +578,7 @@ def start_game():
             pygame.mixer_music.set_volume(volume)
 
         if back == menu:
-            display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+            display.blit(pygame.image.frombuffer(blur(), PERMISSION, "RGB"), (0, 0))
         back_button = Button(w=110, h=50, y=14)
         volume_button = Button(w=100, h=100, x=35, y=35)
         flag_all_false()
@@ -597,7 +598,7 @@ def start_game():
             pygame.display.update()
 
     def exit_game():
-        display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+        display.blit(pygame.image.frombuffer(blur(), PERMISSION, "RGB"), (0, 0))
         choice_button_no = Button(w=120, h=80, x=15, y=16)
         choice_button_yes = Button(w=120, h=80, x=25, y=15)
         flag_all_false()
@@ -679,7 +680,7 @@ def start_game():
 
     def menu():
         def new_game():
-            display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
+            display.blit(pygame.image.frombuffer(blur(), PERMISSION, "RGB"), (0, 0))
             preset_button = Button(w=480, h=50, x=75, y=14)
             back_button = Button(w=110, h=50, y=14)
             flag_all_false()
@@ -723,9 +724,9 @@ def start_game():
         global display, back_menu, bg
         pygame.init()
         if FullScreen:
-            display = pygame.display.set_mode((1920, 1080), pygame.FULLSCREEN)
+            display = pygame.display.set_mode(PERMISSION, pygame.FULLSCREEN)
         else:
-            display = pygame.display.set_mode((1920, 1080))
+            display = pygame.display.set_mode(PERMISSION)
         pygame.display.set_caption("Geri_Games_INC")
         back_menu = pygame.image.load('../Data/menu.jpg')
         display.blit(back_menu, (0, 0))
