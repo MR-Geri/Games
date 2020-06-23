@@ -638,8 +638,9 @@ def start_game():
                         menu()
                 pygame.display.update()
 
-        global person
+        global person, flag_esc_menu
         person = None
+        flag_esc_menu = True
         display.blit(back_menu, (0, 0))
         ex_button = Button(w=200, h=80, x=27, y=20)
         new_game_button = Button(w=280, h=50, x=52, y=13)
