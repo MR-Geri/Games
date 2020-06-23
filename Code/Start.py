@@ -193,9 +193,18 @@ def start_game():
         back = inventory
         flag_all_false()
         FLAG[INVENTORY] = True
+        pygame.draw.rect(display, (255, 255, 255), (480, 240, 960, 600))
+        pygame.draw.rect(display, (212, 92, 0), (490, 250, 940, 580))
+        pygame.draw.rect(display, (255, 255, 255), (480, 475, 960, 10))  # горизонтальная
+        pygame.draw.rect(display, (255, 255, 255), (955, 240, 10, 240))  # вертикальная
+        pygame.draw.rect(display, (255, 255, 255), (500, 260, 100, 100))  # левая верхняя ячейка
+        pygame.draw.rect(display, (255, 255, 255), (500, 365, 100, 100))  # левая нижняя ячейка
+        pygame.draw.rect(display, (255, 255, 255), (845, 260, 100, 100))  # правая верхняя ячейка
+        pygame.draw.rect(display, (255, 255, 255), (845, 365, 100, 100))  # правая нижняя ячейка
+
+        pygame.display.update()
         while FLAG[INVENTORY]:
             is_active_display()
-            pygame.draw.rect(display, (212, 92, 0), (480, 240, 960, 600))
             for e in pygame.event.get():
                 if e.type == pygame.QUIT:
                     pygame.quit()
@@ -204,7 +213,6 @@ def start_game():
                     game()
                 if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
                     esc_menu()
-            pygame.display.update()
 
     def working_objects(data_saves=None):
         class Updating:
