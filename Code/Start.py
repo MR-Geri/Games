@@ -6,9 +6,10 @@ import random
 import time
 
 
-FPS = 60
 timer = pygame.time.Clock()
 active = []
+display = None
+back = None
 # Flag
 flag_esc_menu = True
 # Флаги для циклов
@@ -22,7 +23,8 @@ MENU = False
 OPTION = False
 EXIT = False
 GAME = False
-FLAG = [NEW_GAME, PRELOAD, PRELOAD_MENU, DELL_GAME, LOAD_GAME, MENU, OPTION, EXIT, GAME, ESC_MENU]
+INVENTORY = False
+FLAG = [NEW_GAME, PRELOAD, PRELOAD_MENU, DELL_GAME, LOAD_GAME, MENU, OPTION, EXIT, GAME, INVENTORY, ESC_MENU]
 # Для сохранения карты
 save_map = []
 # Все объекты
@@ -34,9 +36,7 @@ WIN_HEIGHT = 1080
 QUANTITY_SELL = (101, 101)
 SIZE_SELL = 120
 COLOR = "#888888"
-MOVE = 10
-left = right = up = down = False
-left_h = right_h = up_h = down_h = False
+CAMS_SPEED = 20
 # Ячейки для карты
 data_sell = ['cell.jpg', 'cell_0.jpg', 'cell_1.jpg', 'cell_2.jpg', 'cell_3.jpg', 'cell_4.jpg']
 data_sell_image = [pygame.image.load(f'../Data/data_sell/cell.jpg'),
@@ -53,14 +53,19 @@ data_sell_active_image = [pygame.image.load(f'../Data/data_sell/cell_ellipse.jpg
                           pygame.image.load(f'../Data/data_sell/cell_ellipse_2.jpg'),
                           pygame.image.load(f'../Data/data_sell/cell_ellipse_3.jpg'),
                           pygame.image.load(f'../Data/data_sell/cell_ellipse_4.jpg')]
-# Левый клик
+# Кнопки
 button_click_left = False
+left_click = False
+left = right = up = down = False
+key_e = 1  # 1 - закрыт.
 # Персонаж
 person = None
 # Настройки
+FPS = 60
 active_display = 0
 FullScreen = False
 volume = float(json.load(open('../Save_Loading/settings.json')))
+DATA_SAVE = json.load(open('../Save_Loading/save.json'))
 
 
 def is_active_display():
@@ -108,7 +113,7 @@ class Button:
             pygame.draw.rect(display, self.inactive_color, (x, y, self.w, self.h))
         print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
 
-    def draw_act(self, x, y, message=None, action=None, size=30, act=(), time_sleep=0.0):
+    def draw_act(self, x, y, message=None, action=None, size=30, act=(), time_sleep=0.0, color=(0, 0, 0)):
         global button_click_left
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
@@ -125,7 +130,7 @@ class Button:
                     action(act)
         else:
             pygame.draw.rect(display, self.inactive_color, (x, y, self.w, self.h))
-        print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
+        print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size, font_color=color)
 
     def draw_info(self, x, y, message=None, action=None, action_info=None, size=30):
         global button_click_left
@@ -152,7 +157,7 @@ class Button:
 
 def start_game():
     def esc_menu():
-        global flag_esc_menu
+        global flag_esc_menu, back
 
         def back_to_menu():
             save_game()
@@ -169,17 +174,35 @@ def start_game():
         while FLAG[ESC_MENU]:
             is_active_display()
             pygame.draw.rect(display, (255, 255, 0), (700, 385, 520, 308))
-            continue_button.draw(720, 395, 'Продолжить', game)
+            continue_button.draw(720, 395, 'Продолжить', back)
             save_button.draw(720, 455, 'Сохранить игру', save_game)
-            load_button.draw_act(720, 515, 'Загрузить игру', load_game, act='esc', time_sleep=0.25)
-            option_button.draw_act(720, 575, 'Настройки', options_game, act='esc')
+            load_button.draw(720, 515, 'Загрузить игру', load_game, time_sleep=0.25)
+            option_button.draw(720, 575, 'Настройки', options_game)
             menu_button.draw(720, 635, 'Выход в главное меню', back_to_menu)
             for i in pygame.event.get():
                 if i.type == pygame.QUIT:
                     pygame.quit()
                     quit()
                 if i.type == pygame.KEYDOWN and i.key == pygame.K_ESCAPE:
+                    back()
+            pygame.display.update()
+
+    def inventory():
+        global key_e, back
+        back = inventory
+        flag_all_false()
+        FLAG[INVENTORY] = True
+        while FLAG[INVENTORY]:
+            is_active_display()
+            pygame.draw.rect(display, (212, 92, 0), (480, 240, 960, 600))
+            for e in pygame.event.get():
+                if e.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
+                if e.type == pygame.KEYDOWN and e.key == pygame.K_e:
                     game()
+                if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
+                    esc_menu()
             pygame.display.update()
 
     def working_objects(data_saves=None):
@@ -188,11 +211,13 @@ def start_game():
                 self.map = map
                 self.cam = cam
                 self.hero = hero
+                self.invent = False
 
             def update(self):
                 display.blit(bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
                 camera.update(self.cam)  # центризируем камеру относительно персонажа
                 self.cam.update(left, right, up, down)  # передвижение камеры
+                # Возврат клетки с точкой к обычной после перемещения персонажа
                 for i in active:
                     self.map[i[0]][i[1]].update(pygame.mouse.get_pos())
                 self.hero.update(pygame.mouse.get_pos())  # обновление персонажа
@@ -213,17 +238,18 @@ def start_game():
                 self.rect = self.image.get_rect(center=(x + SIZE_SELL // 2, y + SIZE_SELL // 2))
 
             def update(self, mouse):
-                # Нажатие по персонажу ЛКМ
-                local_x = (self.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) * SIZE_SELL + 9 * SIZE_SELL
-                local_y = (self.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) * SIZE_SELL + 5 * SIZE_SELL
-                if local_x - SIZE_SELL < mouse[0] < local_x and \
-                        local_y - SIZE_SELL / 2 < mouse[1] < local_y + SIZE_SELL / 2 and \
-                        pygame.mouse.get_pressed()[0] == 1 and self.last_left_click == 0:
-                    all_entity.hero.rect.x = self.rect.x
-                    all_entity.hero.rect.y = self.rect.y
-                    for i in active:
-                        all_entity.map[i[0]][i[1]].image = data_sell_image[int(save_map[i[0]][i[1]])]
-                self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
+                if all_entity.invent is False:
+                    # Перемещение персонажа на ячейку с точкой.
+                    local_x = (self.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) * SIZE_SELL + 9 * SIZE_SELL
+                    local_y = (self.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) * SIZE_SELL + 5 * SIZE_SELL
+                    if local_x - SIZE_SELL < mouse[0] < local_x and \
+                            local_y - SIZE_SELL / 2 < mouse[1] < local_y + SIZE_SELL / 2 and \
+                            pygame.mouse.get_pressed()[0] == 1 and self.last_left_click == 0:
+                        all_entity.hero.rect.x = self.rect.x
+                        all_entity.hero.rect.y = self.rect.y
+                        for i in active:
+                            all_entity.map[i[0]][i[1]].image = data_sell_image[int(save_map[i[0]][i[1]])]
+                    self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
 
         class Camera(object):
             def __init__(self, camera_func, width, height):
@@ -258,16 +284,16 @@ def start_game():
                 self.x_vel = 0
                 self.y_vel = 0
                 if up and self.rect.y > 540:
-                    self.y_vel = -MOVE
+                    self.y_vel = -CAMS_SPEED
 
                 if down and self.rect.y < total_height - 540:
-                    self.y_vel = MOVE
+                    self.y_vel = CAMS_SPEED
 
                 if left and self.rect.x > 960:
-                    self.x_vel = -MOVE  # Лево = x- n
+                    self.x_vel = -CAMS_SPEED  # Лево = x- n
 
                 if right and self.rect.x < total_width - 960:
-                    self.x_vel = MOVE  # Право = x + n
+                    self.x_vel = CAMS_SPEED  # Право = x + n
 
                 self.rect.y += self.y_vel
                 self.rect.x += self.x_vel
@@ -285,43 +311,35 @@ def start_game():
                 self.col_vo_click = 0
 
             def update(self, mouse):
-                global left_h, right_h, up_h, down_h, active
+                global active, key_e
                 self.x_vel = 0
                 self.y_vel = 0
                 # координата персонажа относительные (1920.1080)
                 local_x = (self.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) * SIZE_SELL + 9 * SIZE_SELL
                 local_y = (self.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) * SIZE_SELL + 5 * SIZE_SELL
                 # Нажатие по персонажу ЛКМ
-                if local_x - SIZE_SELL < mouse[0] < local_x and \
-                        local_y - SIZE_SELL / 2 < mouse[1] < local_y + SIZE_SELL / 2 and \
-                        pygame.mouse.get_pressed()[0] == 1 and self.last_left_click == 0:
-                    self.col_vo_click += 1
-                    self.col_vo_click = 0 if self.col_vo_click > 3 else self.col_vo_click
-                    for y in range(-3, 4, 1):
-                        for x in range(-3, 4, 1):
-                            if y == 0 and x == 0:
-                                pass
-                            else:
-                                position_x = self.rect.x // 120 + x
-                                position_y = self.rect.y // 120 + y
-                                sell = data_sell_active[int(save_map[position_y][position_x])] \
-                                    if self.col_vo_click % 2 != 0 else data_sell[int(save_map[position_y][position_x])]
-                                active.append([position_y, position_x])
-                                all_entity.map[position_y][position_x] = Map(position_x * 120, position_y * 120, sell)
-                                active = [] if self.col_vo_click % 2 == 0 else active
-                self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
-                #
-                """if up_h and self.rect.y > 540:
-                    self.y_vel = -SIZE_SELL
-                if down_h and self.rect.y < total_height - 540:
-                    self.y_vel = SIZE_SELL
-                if left_h and self.rect.x > 960:
-                    self.x_vel = -SIZE_SELL  # Лево = x- n
-                if right_h and self.rect.x < total_width - 960:
-                    self.x_vel = SIZE_SELL  # Право = x + n
-                self.rect.y += self.y_vel
-                self.rect.x += self.x_vel
-                left_h = right_h = up_h = down_h = False"""
+                if all_entity.invent is False:
+                    if local_x - SIZE_SELL < mouse[0] < local_x and \
+                            local_y - SIZE_SELL / 2 < mouse[1] < local_y + SIZE_SELL / 2 and \
+                            pygame.mouse.get_pressed()[0] == 1 and self.last_left_click == 0:
+                        self.col_vo_click += 1
+                        self.col_vo_click = 0 if self.col_vo_click > 3 else self.col_vo_click
+                        for y in range(-3, 4, 1):
+                            for x in range(-3, 4, 1):
+                                if y == 0 and x == 0:
+                                    pass
+                                else:
+                                    position_x = self.rect.x // 120 + x
+                                    position_y = self.rect.y // 120 + y
+                                    sell = data_sell_active[int(save_map[position_y][position_x])] \
+                                        if self.col_vo_click % 2 != 0 else data_sell[int(save_map[position_y][position_x])]
+                                    active.append([position_y, position_x])
+                                    all_entity.map[position_y][position_x] = Map(position_x * 120, position_y * 120, sell)
+                                    active = [] if self.col_vo_click % 2 == 0 else active
+                    self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
+                # Открытие инвентаря
+                key_e = 1 if key_e > 2 else key_e
+                all_entity.invent = True if key_e == 2 else False
 
         global save_map, camera, all_entity
         # Загрузочный экран
@@ -401,8 +419,8 @@ def start_game():
                 json.dump(data, file, indent=2, ensure_ascii=False)
             flag_esc_menu = False
 
-    def load_game(call):
-        DATA_SAVE = json.load(open('../Save_Loading/save.json'))
+    def load_game():
+        global DATA_SAVE, back
 
         def load(n):
             def helper_load():
@@ -441,7 +459,7 @@ def start_game():
                         print('Сохранение удалено.')
                         menu()
                 # Удаление игры.
-                if call == 'esc':
+                if back == esc_menu:
                     all_entity.update()
                 else:
                     display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
@@ -463,7 +481,7 @@ def start_game():
                     pygame.display.update()
 
             def load_menu():
-                if call == 'esc':
+                if back == esc_menu:
                     all_entity.update()
                 else:
                     display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
@@ -487,7 +505,7 @@ def start_game():
             if DATA_SAVE[n] is not None:
                 load_menu()
             else:
-                if call == 'esc':
+                if back == esc_menu or back == game:
                     all_entity.update()
                 else:
                     display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
@@ -507,11 +525,12 @@ def start_game():
                             back()
                     pygame.display.update()
 
-        if call == 'esc':
-            back = game
-        elif call == 'menu':
+        if back == menu:
             display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
-            back = menu
+        try:
+            data = json.load(open('../Save_Loading/save.json'))
+        except:
+            data = [None, None, None, None, None]
         back_button = Button(w=110, h=50, y=14)
         saves_button = Button(w=480, h=50, x=160, y=14)
         pygame.display.update()
@@ -521,11 +540,18 @@ def start_game():
             is_active_display()
             pygame.draw.rect(display, (255, 255, 0), (700, 385, 520, 308))
             back_button.draw(10, 10, 'Назад', back, time_sleep=0.25)
-            saves_button.draw_act(720, 395, 'Ячейка 1.', load, time_sleep=0.25, act=0)
-            saves_button.draw_act(720, 455, 'Ячейка 2.', load, time_sleep=0.25, act=1)
-            saves_button.draw_act(720, 515, 'Ячейка 3.', load, time_sleep=0.25, act=2)
-            saves_button.draw_act(720, 575, 'Ячейка 4.', load, time_sleep=0.25, act=3)
-            saves_button.draw_act(720, 635, 'Ячейка 5.', load, time_sleep=0.25, act=4)
+
+            saves_button.draw_act(720, 395, 'Ячейка 1.', load, time_sleep=0.25, act=0,
+                                  color=(48, 213, 202) if data[0] is None else (0, 0, 0))
+            saves_button.draw_act(720, 455, 'Ячейка 2.', load, time_sleep=0.25, act=1,
+                                  color=(48, 213, 202) if data[1] is None else (0, 0, 0))
+            saves_button.draw_act(720, 515, 'Ячейка 3.', load, time_sleep=0.25, act=2,
+                                  color=(48, 213, 202) if data[2] is None else (0, 0, 0))
+            saves_button.draw_act(720, 575, 'Ячейка 4.', load, time_sleep=0.25, act=3,
+                                  color=(48, 213, 202) if data[3] is None else (0, 0, 0))
+            saves_button.draw_act(720, 635, 'Ячейка 5.', load, time_sleep=0.25, act=4,
+                                  color=(48, 213, 202) if data[4] is None else (0, 0, 0))
+
             for i in pygame.event.get():
                 if i.type == pygame.QUIT:
                     pygame.quit()
@@ -534,7 +560,7 @@ def start_game():
                     back()
             pygame.display.update()
 
-    def options_game(call):
+    def options_game():
         def volume_minus():
             global volume
             volume -= 0.001
@@ -550,11 +576,8 @@ def start_game():
                 json.dump(volume, file, indent=2, ensure_ascii=False)
             pygame.mixer_music.set_volume(volume)
 
-        if call == 'esc':
-            back = game
-        elif call == 'menu':
+        if back == menu:
             display.blit(pygame.image.frombuffer(blur(), (1920, 1080), "RGB"), (0, 0))
-            back = menu
         back_button = Button(w=110, h=50, y=14)
         volume_button = Button(w=100, h=100, x=35, y=35)
         flag_all_false()
@@ -598,8 +621,9 @@ def start_game():
             pygame.display.update()
 
     def game():
-        global left, right, up, down, left_click
-        global camera, all_entity, display
+        global left, right, up, down, key_e, left_click
+        global camera, all_entity, display, back
+        back = game
         display.blit(back_menu, (0, 0))
         flag_all_false()
         FLAG[GAME] = True
@@ -621,6 +645,8 @@ def start_game():
                     right = True
                 if e.type == pygame.KEYDOWN and e.key == pygame.K_s:
                     down = True
+                if e.type == pygame.KEYDOWN and e.key == pygame.K_e:
+                    inventory()
 
                 if e.type == pygame.KEYUP and e.key == pygame.K_w:
                     up = False
@@ -670,7 +696,8 @@ def start_game():
                         menu()
                 pygame.display.update()
 
-        global person, flag_esc_menu
+        global person, flag_esc_menu, back
+        back = menu
         person = None
         flag_esc_menu = True
         display.blit(back_menu, (0, 0))
@@ -683,8 +710,8 @@ def start_game():
         while FLAG[MENU]:
             is_active_display()
             new_game_button.draw(820, 600, 'Новая игра', new_game)
-            save_load_button.draw_act(820, 700, 'Загрузить игру', load_game, act='menu')
-            options_button.draw_act(820, 800, 'Настройки', options_game, act='menu')
+            save_load_button.draw(820, 700, 'Загрузить игру', load_game)
+            options_button.draw(820, 800, 'Настройки', options_game)
             ex_button.draw(860, 900, 'Выход', exit_game, 50)
             for i in pygame.event.get():
                 if i.type == pygame.QUIT:
