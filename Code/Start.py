@@ -8,6 +8,7 @@ import time
 
 FPS = 60
 timer = pygame.time.Clock()
+active = []
 # Flag
 flag_esc_menu = True
 # Флаги для циклов
@@ -38,8 +39,20 @@ left = right = up = down = False
 left_h = right_h = up_h = down_h = False
 # Ячейки для карты
 data_sell = ['cell.jpg', 'cell_0.jpg', 'cell_1.jpg', 'cell_2.jpg', 'cell_3.jpg', 'cell_4.jpg']
+data_sell_image = [pygame.image.load(f'../Data/data_sell/cell.jpg'),
+                   pygame.image.load(f'../Data/data_sell/cell_0.jpg'),
+                   pygame.image.load(f'../Data/data_sell/cell_1.jpg'),
+                   pygame.image.load(f'../Data/data_sell/cell_2.jpg'),
+                   pygame.image.load(f'../Data/data_sell/cell_3.jpg'),
+                   pygame.image.load(f'../Data/data_sell/cell_4.jpg')]
 data_sell_active = ['cell_ellipse.jpg', 'cell_ellipse_0.jpg', 'cell_ellipse_1.jpg', 'cell_ellipse_2.jpg',
                     'cell_ellipse_3.jpg', 'cell_ellipse_4.jpg']
+data_sell_active_image = [pygame.image.load(f'../Data/data_sell/cell_ellipse.jpg'),
+                          pygame.image.load(f'../Data/data_sell/cell_ellipse_0.jpg'),
+                          pygame.image.load(f'../Data/data_sell/cell_ellipse_1.jpg'),
+                          pygame.image.load(f'../Data/data_sell/cell_ellipse_2.jpg'),
+                          pygame.image.load(f'../Data/data_sell/cell_ellipse_3.jpg'),
+                          pygame.image.load(f'../Data/data_sell/cell_ellipse_4.jpg')]
 # Левый клик
 button_click_left = False
 # Персонаж
@@ -179,8 +192,10 @@ def start_game():
             def update(self):
                 display.blit(bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
                 camera.update(self.cam)  # центризируем камеру относительно персонажа
-                self.cam.update(left, right, up, down)  # передвижение
-                self.hero.update(pygame.mouse.get_pos())
+                self.cam.update(left, right, up, down)  # передвижение камеры
+                for i in active:
+                    self.map[i[0]][i[1]].update(pygame.mouse.get_pos())
+                self.hero.update(pygame.mouse.get_pos())  # обновление персонажа
                 # отрисовка карты
                 for i in self.map:
                     for g in i:
@@ -192,8 +207,23 @@ def start_game():
         class Map(pygame.sprite.Sprite):
             def __init__(self, x, y, graphic_sell):
                 pygame.sprite.Sprite.__init__(self)
+                self.last_left_click, self.last_right_click = 0, 0
+                self.col_vo_click = 0
                 self.image = pygame.image.load(f'../Data/data_sell/{graphic_sell}')
                 self.rect = self.image.get_rect(center=(x + SIZE_SELL // 2, y + SIZE_SELL // 2))
+
+            def update(self, mouse):
+                # Нажатие по персонажу ЛКМ
+                local_x = (self.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) * SIZE_SELL + 9 * SIZE_SELL
+                local_y = (self.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) * SIZE_SELL + 5 * SIZE_SELL
+                if local_x - SIZE_SELL < mouse[0] < local_x and \
+                        local_y - SIZE_SELL / 2 < mouse[1] < local_y + SIZE_SELL / 2 and \
+                        pygame.mouse.get_pressed()[0] == 1 and self.last_left_click == 0:
+                    all_entity.hero.rect.x = self.rect.x
+                    all_entity.hero.rect.y = self.rect.y
+                    for i in active:
+                        all_entity.map[i[0]][i[1]].image = data_sell_image[int(save_map[i[0]][i[1]])]
+                self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
 
         class Camera(object):
             def __init__(self, camera_func, width, height):
@@ -255,10 +285,10 @@ def start_game():
                 self.col_vo_click = 0
 
             def update(self, mouse):
-                global left_h, right_h, up_h, down_h
+                global left_h, right_h, up_h, down_h, active
                 self.x_vel = 0
                 self.y_vel = 0
-                # координата камеры
+                # координата персонажа относительные (1920.1080)
                 local_x = (self.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) * SIZE_SELL + 9 * SIZE_SELL
                 local_y = (self.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) * SIZE_SELL + 5 * SIZE_SELL
                 # Нажатие по персонажу ЛКМ
@@ -276,10 +306,12 @@ def start_game():
                                 position_y = self.rect.y // 120 + y
                                 sell = data_sell_active[int(save_map[position_y][position_x])] \
                                     if self.col_vo_click % 2 != 0 else data_sell[int(save_map[position_y][position_x])]
+                                active.append([position_y, position_x])
                                 all_entity.map[position_y][position_x] = Map(position_x * 120, position_y * 120, sell)
+                                active = [] if self.col_vo_click % 2 == 0 else active
                 self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
                 #
-                if up_h and self.rect.y > 540:
+                """if up_h and self.rect.y > 540:
                     self.y_vel = -SIZE_SELL
                 if down_h and self.rect.y < total_height - 540:
                     self.y_vel = SIZE_SELL
@@ -289,7 +321,7 @@ def start_game():
                     self.x_vel = SIZE_SELL  # Право = x + n
                 self.rect.y += self.y_vel
                 self.rect.x += self.x_vel
-                left_h = right_h = up_h = down_h = False
+                left_h = right_h = up_h = down_h = False"""
 
         global save_map, camera, all_entity
         # Загрузочный экран
