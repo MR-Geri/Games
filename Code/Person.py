@@ -16,7 +16,8 @@ SPECIAL_BASE = Data.file_data.SPECIAL_BASE
 SPECIAL_BASE_PRINT = Data.file_data.SPECIAL_BASE_PRINT
 
 """Основные параметры"""
-LIMIT_CONTROL, LIMIT_STRESS = 100, 100
+BASE_number_of_cells = (1, 5)  # 1 строка 5 столбов (перемножаем == инвентарь)
+LIMIT_STRESS = 100
 LIMIT_HP, LIMIT_HUNGER, LIMIT_WATER = 100, 100, 100
 LIMIT_BUFF, LIMIT_DE_BUFF = 3, 3
 LIMIT_SPECIAL = 3
@@ -85,18 +86,18 @@ class Action:
         if not Action.is_live(self):
             return False
         self.pers.stress -= stress_points
-        if self.pers.control < 0:
+        if self.pers.stress > 100:
             self.pers.damage(int(0.5 * abs(self.pers.stress)))
             if Action.is_live(self) is False:
                 print(f'Персонаж погиб из-за стресса.')
-            self.pers.control = 0
+            self.pers.stress = 100
 
     def relax(self, relax_points):
         if not Action.is_live(self):
             return False
-        self.pers.control += relax_points
+        self.pers.stress -= relax_points
         # Лимит.
-        self.pers.control = LIMIT_STRESS if self.pers.control > LIMIT_STRESS else self.pers.control
+        self.pers.stress = LIMIT_STRESS if self.pers.stress > LIMIT_STRESS else self.pers.stress
 
     def add_buff(self, buffs):
         if not Action.is_live(self):
@@ -155,7 +156,8 @@ class Personage:
         self.special, self.skills = Personage.set_special(self), set()
         self.buff, self.de_buff = Personage.set_buff(self), Personage.set_de_buff(self)
         """значения"""
-        self.control, self.hunger, self.water = LIMIT_CONTROL, LIMIT_HUNGER, LIMIT_WATER
+        self.number_of_cells = BASE_number_of_cells
+        self.hunger, self.water = LIMIT_HUNGER, LIMIT_WATER
         self.hp, self.stress = LIMIT_HP, random.randint(0, 30)
         self.pockets = [None, None, None, None]
         self.left_arm, self.right_arm, self.back = None, None, None
@@ -205,7 +207,7 @@ class Data_pers:
                               [', '.join([i for i in temp])])
             print(f'{pers.name} {pers.surname}:\n\tВозраст: {pers.age}\n\t'
                   f'Здоровье: {pers.hp}\n\tКоличество еды: {pers.hunger}\n\t'
-                  f'Контроль: {pers.control}\n\tСтресс: {pers.stress}\n\tОсобенности:\n\t\t{special}'
+                  f'Стресс: {pers.stress}\n\tОсобенности:\n\t\t{special}'
                   f'\n\tУмения:\n\t\t{skills}\n\tБафы:\n\t\t{buff}\n\tДебафы:\n\t\t{de_buff}\n\t'
                   f'В левой руке {left_arm}.\n\tВ правой руке {right_arm}.'
                   f'\n\tЗа спиной {back}.\n\tВ карманах {pockets}.')

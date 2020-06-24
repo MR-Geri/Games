@@ -7,7 +7,7 @@ import time
 
 
 timer = pygame.time.Clock()
-active = []
+active_move_sell = []
 display = None
 back = None
 # Flag
@@ -25,6 +25,7 @@ EXIT = False
 GAME = False
 INVENTORY = False
 FLAG = [NEW_GAME, PRELOAD, PRELOAD_MENU, DELL_GAME, LOAD_GAME, MENU, OPTION, EXIT, GAME, INVENTORY, ESC_MENU]
+active_person = 0
 # Для сохранения карты
 save_map = []
 # Все объекты
@@ -189,18 +190,15 @@ def start_game():
             pygame.display.update()
 
     def inventory():
-        global key_e, back
+        global key_e, back, active_person
         back = inventory
         flag_all_false()
         FLAG[INVENTORY] = True
-        pygame.draw.rect(display, (255, 255, 255), (480, 240, 960, 600))
-        pygame.draw.rect(display, (212, 92, 0), (490, 250, 940, 580))
-        pygame.draw.rect(display, (255, 255, 255), (480, 475, 960, 10))  # горизонтальная
-        pygame.draw.rect(display, (255, 255, 255), (955, 240, 10, 240))  # вертикальная
-        pygame.draw.rect(display, (255, 255, 255), (500, 260, 100, 100))  # левая верхняя ячейка
-        pygame.draw.rect(display, (255, 255, 255), (500, 365, 100, 100))  # левая нижняя ячейка
-        pygame.draw.rect(display, (255, 255, 255), (845, 260, 100, 100))  # правая верхняя ячейка
-        pygame.draw.rect(display, (255, 255, 255), (845, 365, 100, 100))  # правая нижняя ячейка
+        pygame.draw.rect(display, (255, 255, 255), (340, 220, 1240, 640))
+        pygame.draw.rect(display, (212, 92, 0), (350, 230, 1220, 620))
+        for y in range(person.personalities[active_person].number_of_cells[0]):
+            for x in range(person.personalities[active_person].number_of_cells[1]):
+                display.blit(pygame.image.load('../Data/item_sell.jpg'), (360 + 120 * x, 720 - 120 * y))
 
         pygame.display.update()
         while FLAG[INVENTORY]:
@@ -227,7 +225,7 @@ def start_game():
                 camera.update(self.cam)  # центризируем камеру относительно персонажа
                 self.cam.update(left, right, up, down)  # передвижение камеры
                 # Возврат клетки с точкой к обычной после перемещения персонажа
-                for i in active:
+                for i in active_move_sell:
                     self.map[i[0]][i[1]].update(pygame.mouse.get_pos())
                 self.hero.update(pygame.mouse.get_pos())  # обновление персонажа
                 # отрисовка карты
@@ -256,7 +254,7 @@ def start_game():
                             pygame.mouse.get_pressed()[0] == 1 and self.last_left_click == 0:
                         all_entity.hero.rect.x = self.rect.x
                         all_entity.hero.rect.y = self.rect.y
-                        for i in active:
+                        for i in active_move_sell:
                             all_entity.map[i[0]][i[1]].image = data_sell_image[int(save_map[i[0]][i[1]])]
                     self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
 
@@ -320,7 +318,7 @@ def start_game():
                 self.col_vo_click = 0
 
             def update(self, mouse):
-                global active, key_e
+                global active_move_sell, key_e
                 self.x_vel = 0
                 self.y_vel = 0
                 # координата персонажа относительные (1920.1080)
@@ -342,9 +340,9 @@ def start_game():
                                     position_y = self.rect.y // 120 + y
                                     sell = data_sell_active[int(save_map[position_y][position_x])] \
                                         if self.col_vo_click % 2 != 0 else data_sell[int(save_map[position_y][position_x])]
-                                    active.append([position_y, position_x])
+                                    active_move_sell.append([position_y, position_x])
                                     all_entity.map[position_y][position_x] = Map(position_x * 120, position_y * 120, sell)
-                                    active = [] if self.col_vo_click % 2 == 0 else active
+                                    active_move_sell = [] if self.col_vo_click % 2 == 0 else active_move_sell
                     self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
                 # Открытие инвентаря
                 key_e = 1 if key_e > 2 else key_e
@@ -400,7 +398,7 @@ def start_game():
             data_t[0] = save_map
             for pers in person.personalities:
                 temp = [pers.name, pers.surname, pers.age, list(pers.special), list(pers.skills), list(pers.buff),
-                        list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.control, pers.stress,
+                        list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.number_of_cells, pers.stress,
                         pers.left_arm, pers.right_arm, pers.back, pers.pockets]
                 data_t[1].append(temp)
             data_t[2] = [all_entity.hero.rect.x, all_entity.hero.rect.y]
@@ -445,8 +443,8 @@ def start_game():
                     person.personalities[pers].de_buff = set(per[pers][6])
                     person.personalities[pers].hp = per[pers][7]
                     person.personalities[pers].hunger, person.personalities[pers].water = per[pers][8], per[pers][9]
-                    person.personalities[pers].control, person.personalities[pers].stress = per[pers][10], per[pers][
-                        11]
+                    person.personalities[pers].number_of_cells = per[pers][10]
+                    person.personalities[pers].stress = per[pers][11]
                     person.personalities[pers].left_arm = per[pers][12]
                     person.personalities[pers].right_arm = per[pers][13]
                     person.personalities[pers].back, person.personalities[pers].pockets = per[pers][14], per[pers][15]
