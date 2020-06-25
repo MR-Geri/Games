@@ -16,7 +16,8 @@ SPECIAL_BASE = Data.file_data.SPECIAL_BASE
 SPECIAL_BASE_PRINT = Data.file_data.SPECIAL_BASE_PRINT
 
 """Основные параметры"""
-BASE_number_of_cells = (1, 5)  # 1 строка 5 столбов (перемножаем == инвентарь)
+number_x_y = (4, 3)
+BASE_cells = [[None for _ in range(number_x_y[0])] for _ in range(number_x_y[1])]
 LIMIT_STRESS = 100
 LIMIT_HP, LIMIT_HUNGER, LIMIT_WATER = 100, 100, 100
 LIMIT_BUFF, LIMIT_DE_BUFF = 3, 3
@@ -156,7 +157,8 @@ class Personage:
         self.special, self.skills = Personage.set_special(self), set()
         self.buff, self.de_buff = Personage.set_buff(self), Personage.set_de_buff(self)
         """значения"""
-        self.number_of_cells = BASE_number_of_cells
+        self.number_of_cells = BASE_cells
+        self.number_x_y = number_x_y
         self.hunger, self.water = LIMIT_HUNGER, LIMIT_WATER
         self.hp, self.stress = LIMIT_HP, random.randint(0, 30)
         self.pockets = [None, None, None, None]

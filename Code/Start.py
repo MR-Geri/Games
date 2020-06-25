@@ -31,6 +31,7 @@ save_map = []
 # Все объекты
 camera = None
 all_entity = None
+inventory = None
 # Для камеры, движения и карты
 WIN_WIDTH = 1920
 WIN_HEIGHT = 1080
@@ -189,28 +190,56 @@ def start_game():
                     back()
             pygame.display.update()
 
-    def inventory():
-        global key_e, back, active_person
-        back = inventory
-        flag_all_false()
-        FLAG[INVENTORY] = True
-        pygame.draw.rect(display, (255, 255, 255), (340, 220, 1240, 640))
-        pygame.draw.rect(display, (212, 92, 0), (350, 230, 1220, 620))
-        for y in range(person.personalities[active_person].number_of_cells[0]):
-            for x in range(person.personalities[active_person].number_of_cells[1]):
-                display.blit(pygame.image.load('../Data/item_sell.jpg'), (360 + 120 * x, 720 - 120 * y))
+    class Inventory:
+        def __init__(self):
+            self.items = person.personalities[active_person]
 
-        pygame.display.update()
-        while FLAG[INVENTORY]:
-            is_active_display()
-            for e in pygame.event.get():
-                if e.type == pygame.QUIT:
-                    pygame.quit()
-                    quit()
-                if e.type == pygame.KEYDOWN and e.key == pygame.K_e:
-                    game()
-                if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
-                    esc_menu()
+        def update(self):
+            def print_name_sell():
+                #  3 строка
+                print_text('голова', 370, 760)
+                print_text('тело', 505, 760)
+                print_text('ноги', 625, 760)
+                print_text('ступни', 730, 760)
+                #  2 строка
+                print_text('левая', 380, 640)
+                print_text('рука', 383, 670)
+                print_text('правая', 487, 640)
+                print_text('рука', 503, 670)
+                print_text('пояс', 625, 640)
+                print_text('спина', 735, 640)
+                # 1 строка
+                print_text('карман', 370, 530, font_size=27)
+                print_text('карман', 490, 530, font_size=27)
+                print_text('карман', 610, 530, font_size=27)
+                print_text('карман', 730, 530, font_size=27)
+                #
+
+            global key_e, back, active_person
+            global left, right, up, down
+            left = right = up = down = False
+            back = Inventory().update
+            flag_all_false()
+            FLAG[INVENTORY] = True
+            pygame.draw.rect(display, (255, 255, 255), (340, 220, 1240, 640))
+            pygame.draw.rect(display, (212, 92, 0), (350, 230, 1220, 620))
+            for x in range(self.items.number_x_y[0]):
+                for y in range(self.items.number_x_y[1]):
+                    if self.items.number_of_cells[y][x] is None:
+                        display.blit(pygame.image.load('../Data/item_sell.jpg'), (360 + 120 * x, 720 - 120 * y))
+            display.blit(pygame.transform.scale(pygame.image.load("../Data/player_front.png"), (240, 240)), (360, 240))
+            print_name_sell()
+            pygame.display.update()
+            while FLAG[INVENTORY]:
+                is_active_display()
+                for e in pygame.event.get():
+                    if e.type == pygame.QUIT:
+                        pygame.quit()
+                        quit()
+                    if e.type == pygame.KEYDOWN and e.key == pygame.K_e:
+                        game()
+                    if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
+                        esc_menu()
 
     def working_objects(data_saves=None):
         class Updating:
@@ -311,7 +340,7 @@ def start_game():
                 self.x_vel = 0  # скорость перемещения. 0 - стоять на месте
                 self.y_vel = 0  # скорость вертикального перемещения
                 self.image = pygame.Surface((SIZE_SELL, SIZE_SELL))
-                self.image = pygame.image.load("../Data/player.png")
+                self.image = pygame.image.load("../Data/player_front.png")
                 self.image = pygame.transform.scale(self.image, (SIZE_SELL, SIZE_SELL))
                 self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)  # прямоугольный объект
                 self.last_left_click, self.last_right_click = 0, 0
@@ -398,8 +427,8 @@ def start_game():
             data_t[0] = save_map
             for pers in person.personalities:
                 temp = [pers.name, pers.surname, pers.age, list(pers.special), list(pers.skills), list(pers.buff),
-                        list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.number_of_cells, pers.stress,
-                        pers.left_arm, pers.right_arm, pers.back, pers.pockets]
+                        list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.number_of_cells, pers.number_x_y,
+                        pers.stress, pers.left_arm, pers.right_arm, pers.back, pers.pockets]
                 data_t[1].append(temp)
             data_t[2] = [all_entity.hero.rect.x, all_entity.hero.rect.y]
             data_t[3] = [all_entity.cam.rect.x, all_entity.cam.rect.y]
@@ -444,10 +473,11 @@ def start_game():
                     person.personalities[pers].hp = per[pers][7]
                     person.personalities[pers].hunger, person.personalities[pers].water = per[pers][8], per[pers][9]
                     person.personalities[pers].number_of_cells = per[pers][10]
-                    person.personalities[pers].stress = per[pers][11]
-                    person.personalities[pers].left_arm = per[pers][12]
-                    person.personalities[pers].right_arm = per[pers][13]
-                    person.personalities[pers].back, person.personalities[pers].pockets = per[pers][14], per[pers][15]
+                    person.personalities[pers].number_x_y = per[pers][11]
+                    person.personalities[pers].stress = per[pers][12]
+                    person.personalities[pers].left_arm = per[pers][13]
+                    person.personalities[pers].right_arm = per[pers][14]
+                    person.personalities[pers].back, person.personalities[pers].pockets = per[pers][15], per[pers][16]
                 print(person)
                 working_objects([DATA_SAVE[n][0], DATA_SAVE[n][2], DATA_SAVE[n][3]])
                 print(f'Игра загружена.')
@@ -630,6 +660,8 @@ def start_game():
     def game():
         global left, right, up, down, key_e, left_click
         global camera, all_entity, display, back
+        global inventory
+        inventory = Inventory()
         back = game
         display.blit(back_menu, (0, 0))
         flag_all_false()
@@ -653,7 +685,7 @@ def start_game():
                 if e.type == pygame.KEYDOWN and e.key == pygame.K_s:
                     down = True
                 if e.type == pygame.KEYDOWN and e.key == pygame.K_e:
-                    inventory()
+                    Inventory().update()
 
                 if e.type == pygame.KEYUP and e.key == pygame.K_w:
                     up = False
