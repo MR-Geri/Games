@@ -194,6 +194,10 @@ def start_game():
     class Inventory:
         def __init__(self):
             pers = person.personalities[active_person]
+            self.flag = -1
+            self.last_click = 0
+            self.last_pos = [0, 0]
+            self.item_to_move = None
             self.number_x_y = pers.number_x_y
             self.items = [[pers.head, 365, 725], [pers.body, 485, 725],
                           [pers.legs, 605, 725], [pers.legs, 725, 725],
@@ -202,7 +206,7 @@ def start_game():
                           [pers.pockets[0], 365, 485], [pers.pockets[1], 485, 485],
                           [pers.pockets[2], 605, 485], [pers.pockets[3], 725, 485]]
 
-        def update(self):
+        def open(self):
             def print_sell():
                 print_inventory = [('голова', 370, 760, 30), ('тело', 505, 760, 30),
                                    ('ноги', 625, 760, 30), ('ступни', 730, 760, 30),
@@ -217,7 +221,6 @@ def start_game():
                 for i in print_inventory:
                     index = print_inventory.index(i)
                     if self.items[index][0] is not None:
-                        print(self.items[index])
                         display.blit(Data.file_data.image.get(self.items[index][0][0]), (self.items[index][1],
                                                                                          self.items[index][2]))
                     else:
@@ -230,12 +233,12 @@ def start_game():
             global key_e, back, active_person
             global left, right, up, down
             left = right = up = down = False
-            back = Inventory().update
+            back = inventory.open
             flag_all_false()
             FLAG[INVENTORY] = True
             pygame.draw.rect(display, (255, 255, 255), (340, 220, 1240, 640))
             pygame.draw.rect(display, (212, 92, 0), (350, 230, 1220, 620))
-            print_sell()
+
             display.blit(pygame.transform.scale(pygame.image.load("../Data/player_front.png"), (240, 240)), (360, 240))
             display.blit(pygame.transform.scale(pygame.image.load("../Data/player_back.png"), (240, 240)), (600, 240))
 
@@ -250,6 +253,33 @@ def start_game():
                         game()
                     if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
                         esc_menu()
+                inventory.update(pygame.mouse.get_pos())
+                print_sell()
+                pygame.display.update()
+
+        def update(self, mouse):
+            # Перемещение предмета
+            for i in self.items:
+                if i[1] < mouse[0] < i[1] + 120 and i[2] < mouse[1] < i[2] + 120\
+                        and pygame.mouse.get_pressed()[0] == 1 and self.last_click == 0:
+                    self.item_to_move = i if self.item_to_move is None else self.item_to_move
+                    # Флаг это ячейка куда можно перекладывать предмет
+                    if self.items.index(self.item_to_move) == 4:
+                        self.flag = 5
+                    elif self.items.index(self.item_to_move) == 5:
+                        self.flag = 4
+                    print(self.items.index(i), self.items.index(self.item_to_move), self.flag)
+                    if self.items.index(i) != self.items.index(self.item_to_move):
+                        if self.item_to_move[0] is None:
+                            self.item_to_move = None
+                        else:
+                            if self.flag == self.items.index(i):
+                                self.items[self.items.index(i)][0] = self.item_to_move[0]
+                                self.items[self.items.index(self.item_to_move)][0] = None
+                                self.item_to_move = None
+                    else:
+                        print('Невозможно переместить.')
+            self.last_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
 
     def working_objects(data_saves=None):
         class Updating:
@@ -701,7 +731,7 @@ def start_game():
                 if e.type == pygame.KEYDOWN and e.key == pygame.K_s:
                     down = True
                 if e.type == pygame.KEYDOWN and e.key == pygame.K_e:
-                    Inventory().update()
+                    inventory.open()
 
                 if e.type == pygame.KEYUP and e.key == pygame.K_w:
                     up = False
