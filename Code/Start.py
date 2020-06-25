@@ -1,5 +1,6 @@
 from Code.Person import Data_pers
 from Code.Graphics import blur
+import Data.file_data
 import json
 import pygame
 import random
@@ -192,28 +193,39 @@ def start_game():
 
     class Inventory:
         def __init__(self):
-            self.items = person.personalities[active_person]
+            pers = person.personalities[active_person]
+            self.number_x_y = pers.number_x_y
+            self.items = [[pers.head, 365, 725], [pers.body, 485, 725],
+                          [pers.legs, 605, 725], [pers.legs, 725, 725],
+                          [pers.left_arm, 365, 605], [pers.right_arm, 485, 605],
+                          [pers.belt, 605, 605], [pers.back, 725, 605],
+                          [pers.pockets[0], 365, 485], [pers.pockets[1], 485, 485],
+                          [pers.pockets[2], 605, 485], [pers.pockets[3], 725, 485]]
 
         def update(self):
-            def print_name_sell():
-                #  3 строка
-                print_text('голова', 370, 760)
-                print_text('тело', 505, 760)
-                print_text('ноги', 625, 760)
-                print_text('ступни', 730, 760)
-                #  2 строка
-                print_text('левая', 380, 640)
-                print_text('рука', 383, 670)
-                print_text('правая', 487, 640)
-                print_text('рука', 503, 670)
-                print_text('пояс', 625, 640)
-                print_text('спина', 735, 640)
-                # 1 строка
-                print_text('карман', 370, 530, font_size=27)
-                print_text('карман', 490, 530, font_size=27)
-                print_text('карман', 610, 530, font_size=27)
-                print_text('карман', 730, 530, font_size=27)
-                #
+            def print_sell():
+                print_inventory = [('голова', 370, 760, 30), ('тело', 505, 760, 30),
+                                   ('ноги', 625, 760, 30), ('ступни', 730, 760, 30),
+                                   [('левая', 380, 640, 30), ('рука', 383, 670, 30)],
+                                   [('правая', 487, 640, 30), ('рука', 503, 670, 30)],
+                                   ('пояс', 625, 640, 30), ('спина', 735, 640, 30),
+                                   ('карман', 370, 530, 27), ('карман', 490, 530, 27),
+                                   ('карман', 610, 530, 27), ('карман', 730, 530, 27)]
+                for x in range(self.number_x_y[0]):
+                    for y in range(self.number_x_y[1]):
+                        display.blit(pygame.image.load('../Data/items/item_sell.jpg'), (360 + 120 * x, 720 - 120 * y))
+                for i in print_inventory:
+                    index = print_inventory.index(i)
+                    if self.items[index][0] is not None:
+                        print(self.items[index])
+                        display.blit(Data.file_data.image.get(self.items[index][0][0]), (self.items[index][1],
+                                                                                         self.items[index][2]))
+                    else:
+                        if type(i) == tuple:
+                            print_text(*i[:-1], font_size=int(i[-1]))
+                        else:
+                            for j in i:
+                                print_text(*j[:-1], font_size=int(j[-1]))
 
             global key_e, back, active_person
             global left, right, up, down
@@ -223,12 +235,10 @@ def start_game():
             FLAG[INVENTORY] = True
             pygame.draw.rect(display, (255, 255, 255), (340, 220, 1240, 640))
             pygame.draw.rect(display, (212, 92, 0), (350, 230, 1220, 620))
-            for x in range(self.items.number_x_y[0]):
-                for y in range(self.items.number_x_y[1]):
-                    if self.items.number_of_cells[y][x] is None:
-                        display.blit(pygame.image.load('../Data/item_sell.jpg'), (360 + 120 * x, 720 - 120 * y))
+            print_sell()
             display.blit(pygame.transform.scale(pygame.image.load("../Data/player_front.png"), (240, 240)), (360, 240))
-            print_name_sell()
+            display.blit(pygame.transform.scale(pygame.image.load("../Data/player_back.png"), (240, 240)), (600, 240))
+
             pygame.display.update()
             while FLAG[INVENTORY]:
                 is_active_display()
@@ -427,8 +437,9 @@ def start_game():
             data_t[0] = save_map
             for pers in person.personalities:
                 temp = [pers.name, pers.surname, pers.age, list(pers.special), list(pers.skills), list(pers.buff),
-                        list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.number_of_cells, pers.number_x_y,
-                        pers.stress, pers.left_arm, pers.right_arm, pers.back, pers.pockets]
+                        list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.number_x_y,
+                        pers.stress, pers.head, pers.body, pers.legs, pers.feet, pers.left_arm, pers.right_arm,
+                        pers.back, pers.belt, pers.pockets]
                 data_t[1].append(temp)
             data_t[2] = [all_entity.hero.rect.x, all_entity.hero.rect.y]
             data_t[3] = [all_entity.cam.rect.x, all_entity.cam.rect.y]
@@ -472,12 +483,17 @@ def start_game():
                     person.personalities[pers].de_buff = set(per[pers][6])
                     person.personalities[pers].hp = per[pers][7]
                     person.personalities[pers].hunger, person.personalities[pers].water = per[pers][8], per[pers][9]
-                    person.personalities[pers].number_of_cells = per[pers][10]
-                    person.personalities[pers].number_x_y = per[pers][11]
-                    person.personalities[pers].stress = per[pers][12]
-                    person.personalities[pers].left_arm = per[pers][13]
-                    person.personalities[pers].right_arm = per[pers][14]
-                    person.personalities[pers].back, person.personalities[pers].pockets = per[pers][15], per[pers][16]
+                    person.personalities[pers].number_x_y = per[pers][10]
+                    person.personalities[pers].stress = per[pers][11]
+                    person.personalities[pers].head = per[pers][12]
+                    person.personalities[pers].body = per[pers][13]
+                    person.personalities[pers].legs = per[pers][14]
+                    person.personalities[pers].feet = per[pers][15]
+                    person.personalities[pers].left_arm = per[pers][16]
+                    person.personalities[pers].right_arm = per[pers][17]
+                    person.personalities[pers].back = per[pers][18]
+                    person.personalities[pers].belt = per[pers][19]
+                    person.personalities[pers].pockets = per[pers][20]
                 print(person)
                 working_objects([DATA_SAVE[n][0], DATA_SAVE[n][2], DATA_SAVE[n][3]])
                 print(f'Игра загружена.')

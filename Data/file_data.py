@@ -1,3 +1,5 @@
+import pygame
+
 names_m = ['Jack', 'James', "Daniel", "Harry", "Charlie", "Ethan", "Matthew", "Ryen",
            "Riley", "Noah", "Jacob", "Oliver", "Riley", "Alfie", "Mason", "Dylan", "Sherlock"]
 names_d = ["Sophie", "Emily", "Grace", "Amelia", "Jessica", "Lucy", "Sophia", "Katie", "Eva", "Aoife", "Mia"]
@@ -27,5 +29,7 @@ BACKPACK_PRINT = {'дорожная сумка, неудобная, но вме�
 SMALL_OBJECT = [['фонарик'], ['спички']]
 """Названте, урон"""
 AXE = [['старый, ржавый топор', 25]]
+# Картники
+image = {'старый, ржавый топор': pygame.transform.scale(pygame.image.load('../Data/items/old_axe.png'), (110, 110))}
 """Название, сытность"""
 CANNED = [['рыбные консервы', 25], ['тушёнка', 40], ['горошек', 30], ['куриное мясо', 35], ['шпроты', 20]]

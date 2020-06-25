@@ -17,7 +17,6 @@ SPECIAL_BASE_PRINT = Data.file_data.SPECIAL_BASE_PRINT
 
 """Основные параметры"""
 number_x_y = (4, 3)
-BASE_cells = [[None for _ in range(number_x_y[0])] for _ in range(number_x_y[1])]
 LIMIT_STRESS = 100
 LIMIT_HP, LIMIT_HUNGER, LIMIT_WATER = 100, 100, 100
 LIMIT_BUFF, LIMIT_DE_BUFF = 3, 3
@@ -157,12 +156,13 @@ class Personage:
         self.special, self.skills = Personage.set_special(self), set()
         self.buff, self.de_buff = Personage.set_buff(self), Personage.set_de_buff(self)
         """значения"""
-        self.number_of_cells = BASE_cells
         self.number_x_y = number_x_y
         self.hunger, self.water = LIMIT_HUNGER, LIMIT_WATER
         self.hp, self.stress = LIMIT_HP, random.randint(0, 30)
+        """Инвентарь"""
+        self.head = self.body = self.legs = self.feet = None
         self.pockets = [None, None, None, None]
-        self.left_arm, self.right_arm, self.back = None, None, None
+        self.left_arm, self.right_arm, self.back, self.belt = None, None, None, None
 
 
 class Data_pers:
@@ -173,13 +173,14 @@ class Data_pers:
             for i in range(flag):
                 self.personalities.append(Personage())
         elif flag == 1:
+            #  добавление предметов в инвентарь
             self.personalities.append(Personage())
             pers, data = self.personalities[0], Data.file_data
             pers.right_arm = data.AXE[0]
-            pers.pockets[0] = data.SMALL_OBJECT[0]
-            pers.pockets[1] = data.SMALL_OBJECT[1]
-            pers.back = data.BACKPACK[0]
-            pers.back[2].append(data.CANNED[0])
+            # pers.pockets[0] = data.SMALL_OBJECT[0]
+            # pers.pockets[1] = data.SMALL_OBJECT[1]
+            # pers.back = data.BACKPACK[0]
+            # pers.back[2].append(data.CANNED[0])
 
     def info(self, number_pers=None):
         if number_pers is None:
@@ -199,6 +200,7 @@ class Data_pers:
             left_arm = 'пусто' if pers.left_arm is None else pers.left_arm[0]
             right_arm = 'пусто' if pers.right_arm is None else pers.right_arm[0]
             back = 'пусто' if pers.back is None else pers.back[0]
+            belt = 'пусто' if pers.belt is None else pers.belt[0]
             backpack = [i[0] for i in pers.back[2][1:]] if back != 'пусто' else False
             backpack = ', '.join(backpack) if backpack is not False else False
             temp = []
@@ -212,7 +214,7 @@ class Data_pers:
                   f'Стресс: {pers.stress}\n\tОсобенности:\n\t\t{special}'
                   f'\n\tУмения:\n\t\t{skills}\n\tБафы:\n\t\t{buff}\n\tДебафы:\n\t\t{de_buff}\n\t'
                   f'В левой руке {left_arm}.\n\tВ правой руке {right_arm}.'
-                  f'\n\tЗа спиной {back}.\n\tВ карманах {pockets}.')
+                  f'\n\tЗа спиной {back}.\n\tНа поясе {belt}.\n\tВ карманах {pockets}.')
             if backpack is not False:
                 print(f'\tВ {Data.file_data.BACKPACK_PRINT[back]} находятся {backpack}.')
         return '---------------'
