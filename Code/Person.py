@@ -201,8 +201,10 @@ class Data_pers:
             right_arm = 'пусто' if pers.right_arm is None else pers.right_arm[1]
             back = 'пусто' if pers.back is None else pers.back[1]
             belt = 'пусто' if pers.belt is None else pers.belt[1]
-            backpack = [i[1] for i in pers.back[2][1:]] if back != 'пусто' else False
-            backpack = ', '.join(backpack) if backpack is not False else False
+            backpack = False
+            if type(back) == list:
+                backpack = [i[1] for i in pers.back[2][1:]] if back != 'пусто' else False
+                backpack = ', '.join(backpack) if backpack is not False else False
             temp = []
             for i in pers.pockets:
                 if i is not None:
