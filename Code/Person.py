@@ -197,16 +197,16 @@ class Data_pers:
             de_buff = 'нет' if pers.skills == set() else \
                 '\n\t\t'.join([PERSON_EVENTS_PRINT[i] for i in list(pers.de_buff)])
 
-            left_arm = 'пусто' if pers.left_arm is None else pers.left_arm[0]
-            right_arm = 'пусто' if pers.right_arm is None else pers.right_arm[0]
-            back = 'пусто' if pers.back is None else pers.back[0]
-            belt = 'пусто' if pers.belt is None else pers.belt[0]
-            backpack = [i[0] for i in pers.back[2][1:]] if back != 'пусто' else False
+            left_arm = 'пусто' if pers.left_arm is None else pers.left_arm[1]
+            right_arm = 'пусто' if pers.right_arm is None else pers.right_arm[1]
+            back = 'пусто' if pers.back is None else pers.back[1]
+            belt = 'пусто' if pers.belt is None else pers.belt[1]
+            backpack = [i[1] for i in pers.back[2][1:]] if back != 'пусто' else False
             backpack = ', '.join(backpack) if backpack is not False else False
             temp = []
             for i in pers.pockets:
                 if i is not None:
-                    temp.append(i[0])
+                    temp.append(i[1])
             pockets = ''.join(['пусто'] if ''.join([i for i in temp]) == '' else
                               [', '.join([i for i in temp])])
             print(f'{pers.name} {pers.surname}:\n\tВозраст: {pers.age}\n\t'

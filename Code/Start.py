@@ -1,5 +1,6 @@
 from Code.Person import Data_pers
 from Code.Graphics import blur
+import Code.items
 import Data.file_data
 import json
 import pygame
@@ -194,45 +195,31 @@ def start_game():
     class Inventory:
         def __init__(self):
             pers = person.personalities[active_person]
-            self.flag = -1
-            self.col_click_item = 0
-            self.last_click = 0
-            self.last_pos = [0, 0]
-            self.item_to_move = None
-            self.number_x_y = pers.number_x_y
-            self.items = [[pers.head, 365, 725], [pers.body, 485, 725],
-                          [pers.legs, 605, 725], [pers.legs, 725, 725],
-                          [pers.left_arm, 365, 605], [pers.right_arm, 485, 605],
-                          [pers.belt, 605, 605], [pers.back, 725, 605],
-                          [pers.pockets[0], 365, 485], [pers.pockets[1], 485, 485],
-                          [pers.pockets[2], 605, 485], [pers.pockets[3], 725, 485]]
+            self.start_item = [[pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3]],
+                               [pers.left_arm, pers.right_arm, pers.belt, pers.back],
+                               [pers.head, pers.body, pers.legs, pers.feet]]
+            self.invent = []
+            for y in self.start_item:
+                for x in y:
+                    if x is None:
+                        self.invent.append(None)
+                    else:
+                        for i in Data.file_data.ITEMS:
+                            if x in i:
+                                name = Data.file_data.ITEMS_Name[Data.file_data.ITEMS.index(i)]
+                                self.invent.append(Code.items.item_add(name, *x, y.index(x), self.start_item.index(y)))
+                                break
 
         def open(self):
-            def print_sell():
-                print_inventory = [('голова', 370, 760, 30), ('тело', 505, 760, 30),
-                                   ('ноги', 625, 760, 30), ('ступни', 730, 760, 30),
-                                   [('левая', 380, 640, 30), ('рука', 383, 670, 30)],
-                                   [('правая', 487, 640, 30), ('рука', 503, 670, 30)],
-                                   ('пояс', 625, 640, 30), ('спина', 735, 640, 30),
-                                   ('карман', 370, 530, 27), ('карман', 490, 530, 27),
-                                   ('карман', 610, 530, 27), ('карман', 730, 530, 27)]
-                for x in range(self.number_x_y[0]):
-                    for y in range(self.number_x_y[1]):
-                        display.blit(pygame.image.load('../Data/items/item_sell.jpg'), (360 + 120 * x, 720 - 120 * y))
-                for i in print_inventory:
-                    index = print_inventory.index(i)
-                    if self.items[index][0] is not None:
-                        display.blit(Data.file_data.image.get(self.items[index][0][0]), (self.items[index][1],
-                                                                                         self.items[index][2]))
-                    else:
-                        if type(i) == tuple:
-                            print_text(*i[:-1], font_size=int(i[-1]))
-                        else:
-                            for j in i:
-                                print_text(*j[:-1], font_size=int(j[-1]))
-
             global key_e, back, active_person
             global left, right, up, down
+            print_items = [('карман', 370, 530, 27), ('карман', 490, 530, 27),
+                           ('карман', 610, 530, 27), ('карман', 730, 530, 27),
+                           [('левая', 380, 640, 30), ('рука', 383, 670, 30)],
+                           [('правая', 487, 640, 30), ('рука', 503, 670, 30)],
+                           ('пояс', 625, 640, 30), ('спина', 735, 640, 30),
+                           ('голова', 370, 760, 30), ('тело', 505, 760, 30),
+                           ('ноги', 625, 760, 30), ('ступни', 730, 760, 30)]
             left = right = up = down = False
             back = inventory.open
             flag_all_false()
@@ -254,45 +241,20 @@ def start_game():
                         game()
                     if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
                         esc_menu()
-                inventory.update(pygame.mouse.get_pos())
-                print_sell()
-                pygame.display.update()
-
-        def update(self, mouse):
-            # Перемещение предмета
-            for i in self.items:
-                if i[1] < mouse[0] < i[1] + 120 and i[2] < mouse[1] < i[2] + 120\
-                        and pygame.mouse.get_pressed()[0] == 1 and self.last_click == 0:
-                    self.item_to_move = i if self.item_to_move is None else self.item_to_move
-                    # Флаг это ячейка куда можно перекладывать предмет
-                    if self.items.index(self.item_to_move) == 4:
-                        self.flag = 5
-                    elif self.items.index(self.item_to_move) == 5:
-                        self.flag = 4
-                    elif self.items.index(self.item_to_move) == 8:
-                        self.flag = 9
-                    elif self.items.index(self.item_to_move) == 9:
-                        self.flag = 8
-                    if self.col_click_item == 2:
-                        self.item_to_move = None
-                        self.flag = -1
-                        self.col_click_item = 0
+                for x in range(person.personalities[active_person].number_x_y[0]):
+                    for y in range(person.personalities[active_person].number_x_y[1]):
+                        display.blit(pygame.image.load('../Data/items/item_sell.jpg'), (360 + 120 * x, 720 - 120 * y))
+                for item in range(len(self.invent)):
+                    if self.invent[item] is not None:
+                        display.blit(self.invent[item].image,
+                                     (self.invent[item].sell_x * 120 + 365, self.invent[item].sell_y * 120 + 485))
                     else:
-                        if self.items.index(i) != self.items.index(self.item_to_move):
-                            if self.item_to_move[0] is None:
-                                self.item_to_move = None
-                            else:
-                                if self.flag == self.items.index(i):
-                                    self.col_click_item = 0
-                                    self.items[self.items.index(i)][0] = self.item_to_move[0]
-                                    self.items[self.items.index(self.item_to_move)][0] = None
-                                    self.item_to_move = None
-                        elif self.items.index(i) == self.items.index(self.item_to_move) and self.flag != -1:
-                            self.col_click_item += 1
+                        if type(print_items[item]) == tuple:
+                            print_text(*print_items[item][:-1], font_size=int(print_items[item][-1]))
                         else:
-                            if self.item_to_move[0] is None:
-                                self.item_to_move = None
-            self.last_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
+                            for j in print_items[item]:
+                                print_text(*j[:-1], font_size=int(j[-1]))
+                pygame.display.update()
 
     def working_objects(data_saves=None):
         class Updating:
