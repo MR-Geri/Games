@@ -195,6 +195,9 @@ def start_game():
     class Inventory:
         def __init__(self):
             pers = person.personalities[active_person]
+            self.last = 0
+            self.col_vo_click = 0
+            self.temp = None
             self.start_item = [[pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3]],
                                [pers.left_arm, pers.right_arm, pers.belt, pers.back],
                                [pers.head, pers.body, pers.legs, pers.feet]]
@@ -209,6 +212,25 @@ def start_game():
                                 name = Data.file_data.ITEMS_Name[Data.file_data.ITEMS.index(i)]
                                 self.invent.append(Code.items.item_add(name, *x, y.index(x), self.start_item.index(y)))
                                 break
+
+        def mouse_click(self):
+            mouse = pygame.mouse.get_pos()
+            click = pygame.mouse.get_pressed()
+            click = click[0]
+            self.col_vo_click = self.col_vo_click + 1 if click == 1 and self.last == 0 else self.col_vo_click
+            pos_cell = (mouse[0] // 120 - 3, mouse[1] // 120 - 4)
+            if pos_cell != self.temp and self.temp is not None and self.col_vo_click == 2:
+                if self.invent[pos_cell[1] * 4 + pos_cell[0]] is None:
+                    print(self.invent)
+                    temp = self.invent[self.temp[1] * 4 + self.temp[0]]
+                    self.invent[pos_cell[1] * 4 + pos_cell[0]] = temp
+                    self.invent[self.temp[1] * 4 + self.temp[0]] = None
+                    self.temp = None
+                    self.col_vo_click = 0
+                    print(self.invent)
+            self.temp = pos_cell if self.col_vo_click == 1 and self.temp is None else self.temp
+
+            self.last = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
 
         def open(self):
             global key_e, back, active_person
@@ -241,6 +263,7 @@ def start_game():
                         game()
                     if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
                         esc_menu()
+                inventory.mouse_click()
                 # отрисовка ячеек инвентаря
                 for x in range(person.personalities[active_person].number_x_y[0]):
                     for y in range(person.personalities[active_person].number_x_y[1]):
@@ -286,7 +309,6 @@ def start_game():
             def __init__(self, x, y, graphic_sell):
                 pygame.sprite.Sprite.__init__(self)
                 self.last_left_click, self.last_right_click = 0, 0
-                self.col_vo_click = 0
                 self.image = pygame.image.load(f'../Data/data_sell/{graphic_sell}')
                 self.rect = self.image.get_rect(center=(x + SIZE_SELL // 2, y + SIZE_SELL // 2))
 
