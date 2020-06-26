@@ -58,7 +58,7 @@ data_sell_active_image = [pygame.image.load(f'../Data/data_sell/cell_ellipse.jpg
                           pygame.image.load(f'../Data/data_sell/cell_ellipse_3.jpg'),
                           pygame.image.load(f'../Data/data_sell/cell_ellipse_4.jpg')]
 # Кнопки
-button_click_left = False
+button_left_click = False
 left_click = False
 left = right = up = down = False
 key_e = 1  # 1 - закрыт.
@@ -100,14 +100,14 @@ class Button:
         self.ots_x, self.ots_y = x, y
 
     def draw(self, x, y, message=None, action=None, size=30, time_sleep=0.0):
-        global button_click_left
+        global button_left_click
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if x < mouse[0] < x + self.w and y < mouse[1] < y + self.h:
             pygame.draw.rect(display, self.active_color, (x, y, self.w, self.h))
-            flag = 0 if button_click_left is False else 1
-            button_click_left = True if click[0] == 1 and flag == 0 else False
-            if button_click_left and action is not None:
+            flag = 0 if button_left_click is False else 1
+            button_left_click = True if click[0] == 1 and flag == 0 else False
+            if button_left_click and action is not None:
                 if action is quit:
                     pygame.quit()
                     quit()
@@ -119,14 +119,14 @@ class Button:
         print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size)
 
     def draw_act(self, x, y, message=None, action=None, size=30, act=(), time_sleep=0.0, color=(0, 0, 0)):
-        global button_click_left
+        global button_left_click
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if x < mouse[0] < x + self.w and y < mouse[1] < y + self.h:
             pygame.draw.rect(display, self.active_color, (x, y, self.w, self.h))
-            flag = 0 if button_click_left is False else 1
-            button_click_left = True if click[0] == 1 and flag == 0 else False
-            if button_click_left and action is not None:
+            flag = 0 if button_left_click is False else 1
+            button_left_click = True if click[0] == 1 and flag == 0 else False
+            if button_left_click and action is not None:
                 if action is quit:
                     pygame.quit()
                     quit()
@@ -138,16 +138,16 @@ class Button:
         print_text(message=message, x=x + self.ots_x, y=y + self.ots_y, font_size=size, font_color=color)
 
     def draw_info(self, x, y, message=None, action=None, action_info=None, size=30):
-        global button_click_left
+        global button_left_click
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if x < mouse[0] < x + self.w and y < mouse[1] < y + self.h:
             pygame.draw.rect(display, self.active_color, (x, y, self.w, self.h))
             pygame.draw.rect(display, self.inactive_color, (680, 700, 980, 600))
             print_text(action_info(), 700, 720)
-            flag = 0 if button_click_left is False else 1
-            button_click_left = True if click[0] == 1 and flag == 0 else False
-            if button_click_left and action is not None:
+            flag = 0 if button_left_click is False else 1
+            button_left_click = True if click[0] == 1 and flag == 0 else False
+            if button_left_click and action is not None:
                 if action is quit:
                     pygame.quit()
                     quit()
@@ -195,9 +195,9 @@ def start_game():
     class Inventory:
         def __init__(self):
             pers = person.personalities[active_person]
-            self.last = 0
+            self.last_left_click = 0
             self.col_vo_click = 0
-            self.temp = None
+            self.last_sell = None
             self.start_item = [[pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3]],
                                [pers.left_arm, pers.right_arm, pers.belt, pers.back],
                                [pers.head, pers.body, pers.legs, pers.feet]]
@@ -212,19 +212,19 @@ def start_game():
 
         def mouse_click(self):
             mouse, click = pygame.mouse.get_pos(), pygame.mouse.get_pressed()[0]
-            self.col_vo_click = self.col_vo_click + 1 if click == 1 and self.last == 0 else self.col_vo_click
+            self.col_vo_click = self.col_vo_click + 1 if click == 1 and self.last_left_click == 0 else self.col_vo_click
             pos_cell = (mouse[0] // 120 - 3, mouse[1] // 120 - 4)
             if self.col_vo_click == 1:
                 for i in self.invent:
-                    self.temp = pos_cell if i.sell_x == pos_cell[0] and i.sell_y == pos_cell[1] else self.temp
-                self.col_vo_click = 0 if self.temp is None else self.col_vo_click
+                    self.last_sell = pos_cell if i.sell_x == pos_cell[0] and i.sell_y == pos_cell[1] else self.last_sell
+                self.col_vo_click = 0 if self.last_sell is None else self.col_vo_click
             elif self.col_vo_click == 2:
-                if pos_cell != self.temp and self.temp is not None:
+                if pos_cell != self.last_sell and self.last_sell is not None:
                     for i in self.invent:
-                        if i.sell_x == self.temp[0] and i.sell_y == self.temp[1]:
+                        if i.sell_x == self.last_sell[0] and i.sell_y == self.last_sell[1]:
                             i.move(pos_cell[0], pos_cell[1])
-                self.col_vo_click, self.temp = 0, None
-            self.last = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
+                self.col_vo_click, self.last_sell = 0, None
+            self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
 
         def open(self):
             def item_print():
