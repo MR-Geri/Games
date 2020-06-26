@@ -204,44 +204,48 @@ def start_game():
             self.invent = []
             for y in self.start_item:
                 for x in y:
-                    if x is None:
-                        self.invent.append(None)
-                    else:
-                        for i in Data.file_data.ITEMS:
-                            if x in i:
-                                name = Data.file_data.ITEMS_Name[Data.file_data.ITEMS.index(i)]
-                                self.invent.append(Code.items.item_add(name, *x, y.index(x), self.start_item.index(y)))
-                                break
+                    for i in Data.file_data.ITEMS:
+                        if x in i:
+                            name = Data.file_data.ITEMS_Name[Data.file_data.ITEMS.index(i)]
+                            self.invent.append(Code.items.item_add(name, *x, y.index(x), self.start_item.index(y)))
+                            break
 
         def mouse_click(self):
-            mouse = pygame.mouse.get_pos()
-            click = pygame.mouse.get_pressed()
-            click = click[0]
+            mouse, click = pygame.mouse.get_pos(), pygame.mouse.get_pressed()[0]
             self.col_vo_click = self.col_vo_click + 1 if click == 1 and self.last == 0 else self.col_vo_click
             pos_cell = (mouse[0] // 120 - 3, mouse[1] // 120 - 4)
-            if pos_cell != self.temp and self.temp is not None and self.col_vo_click == 2:
-                if self.invent[pos_cell[1] * 4 + pos_cell[0]] is None:
-                    print(self.invent)
-                    temp = self.invent[self.temp[1] * 4 + self.temp[0]]
-                    self.invent[pos_cell[1] * 4 + pos_cell[0]] = temp
-                    self.invent[self.temp[1] * 4 + self.temp[0]] = None
-                    self.temp = None
-                    self.col_vo_click = 0
-                    print(self.invent)
-            self.temp = pos_cell if self.col_vo_click == 1 and self.temp is None else self.temp
-
+            if self.col_vo_click == 1:
+                for i in self.invent:
+                    self.temp = pos_cell if i.sell_x == pos_cell[0] and i.sell_y == pos_cell[1] else self.temp
+                self.col_vo_click = 0 if self.temp is None else self.col_vo_click
+            elif self.col_vo_click == 2:
+                if pos_cell != self.temp and self.temp is not None:
+                    for i in self.invent:
+                        if i.sell_x == self.temp[0] and i.sell_y == self.temp[1]:
+                            i.move(pos_cell[0], pos_cell[1])
+                self.col_vo_click, self.temp = 0, None
             self.last = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
 
         def open(self):
+            def item_print():
+                print_text('карман', 370, 530, font_size=27)
+                print_text('карман', 490, 530, font_size=27)
+                print_text('карман', 610, 530, font_size=27)
+                print_text('карман', 730, 530, font_size=27)
+                print_text('левая', 380, 640, font_size=30)
+                print_text('рука', 383, 670, font_size=30)
+                print_text('правая', 487, 640, font_size=30)
+                print_text('рука', 503, 670, font_size=30)
+                print_text('пояс', 625, 640, font_size=30)
+                print_text('спина', 735, 640, font_size=30)
+                print_text('голова', 370, 760, font_size=30)
+                print_text('тело', 505, 760, font_size=30)
+                print_text('ноги', 625, 760, font_size=30)
+                print_text('ступни', 730, 760, font_size=30)
+
             global key_e, back, active_person
             global left, right, up, down
-            print_items = [('карман', 370, 530, 27), ('карман', 490, 530, 27),
-                           ('карман', 610, 530, 27), ('карман', 730, 530, 27),
-                           [('левая', 380, 640, 30), ('рука', 383, 670, 30)],
-                           [('правая', 487, 640, 30), ('рука', 503, 670, 30)],
-                           ('пояс', 625, 640, 30), ('спина', 735, 640, 30),
-                           ('голова', 370, 760, 30), ('тело', 505, 760, 30),
-                           ('ноги', 625, 760, 30), ('ступни', 730, 760, 30)]
+
             left = right = up = down = False
             back = inventory.open
             flag_all_false()
@@ -269,16 +273,11 @@ def start_game():
                     for y in range(person.personalities[active_person].number_x_y[1]):
                         display.blit(pygame.image.load('../Data/items/item_sell.jpg'), (360 + 120 * x, 720 - 120 * y))
                 # отрисовка иконки предмета, или текста
-                for item in range(len(self.invent)):
-                    if self.invent[item] is not None:
-                        display.blit(self.invent[item].image,
-                                     (self.invent[item].sell_x * 120 + 365, self.invent[item].sell_y * 120 + 485))
-                    else:
-                        if type(print_items[item]) == tuple:
-                            print_text(*print_items[item][:-1], font_size=int(print_items[item][-1]))
-                        else:
-                            for j in print_items[item]:
-                                print_text(*j[:-1], font_size=int(j[-1]))
+                item_print()
+                for item in self.invent:
+                    display.blit(pygame.image.load('../Data/items/item_sell.jpg'),
+                                 (item.sell_x * 120 + 360, item.sell_y * 120 + 480))
+                    display.blit(item.image, (item.sell_x * 120 + 365, item.sell_y * 120 + 485))
                 pygame.display.update()
 
     def working_objects(data_saves=None):
