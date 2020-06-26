@@ -195,6 +195,7 @@ def start_game():
         def __init__(self):
             pers = person.personalities[active_person]
             self.flag = -1
+            self.col_click_item = 0
             self.last_click = 0
             self.last_pos = [0, 0]
             self.item_to_move = None
@@ -268,17 +269,29 @@ def start_game():
                         self.flag = 5
                     elif self.items.index(self.item_to_move) == 5:
                         self.flag = 4
-                    print(self.items.index(i), self.items.index(self.item_to_move), self.flag)
-                    if self.items.index(i) != self.items.index(self.item_to_move):
-                        if self.item_to_move[0] is None:
-                            self.item_to_move = None
-                        else:
-                            if self.flag == self.items.index(i):
-                                self.items[self.items.index(i)][0] = self.item_to_move[0]
-                                self.items[self.items.index(self.item_to_move)][0] = None
-                                self.item_to_move = None
+                    elif self.items.index(self.item_to_move) == 8:
+                        self.flag = 9
+                    elif self.items.index(self.item_to_move) == 9:
+                        self.flag = 8
+                    if self.col_click_item == 2:
+                        self.item_to_move = None
+                        self.flag = -1
+                        self.col_click_item = 0
                     else:
-                        print('Невозможно переместить.')
+                        if self.items.index(i) != self.items.index(self.item_to_move):
+                            if self.item_to_move[0] is None:
+                                self.item_to_move = None
+                            else:
+                                if self.flag == self.items.index(i):
+                                    self.col_click_item = 0
+                                    self.items[self.items.index(i)][0] = self.item_to_move[0]
+                                    self.items[self.items.index(self.item_to_move)][0] = None
+                                    self.item_to_move = None
+                        elif self.items.index(i) == self.items.index(self.item_to_move) and self.flag != -1:
+                            self.col_click_item += 1
+                        else:
+                            if self.item_to_move[0] is None:
+                                self.item_to_move = None
             self.last_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
 
     def working_objects(data_saves=None):

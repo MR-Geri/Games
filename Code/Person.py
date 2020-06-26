@@ -177,7 +177,7 @@ class Data_pers:
             self.personalities.append(Personage())
             pers, data = self.personalities[0], Data.file_data
             pers.right_arm = data.AXE[0]
-            # pers.pockets[0] = data.SMALL_OBJECT[0]
+            pers.pockets[0] = data.SMALL_OBJECT[0]
             # pers.pockets[1] = data.SMALL_OBJECT[1]
             # pers.back = data.BACKPACK[0]
             # pers.back[2].append(data.CANNED[0])
