@@ -241,9 +241,11 @@ def start_game():
                         game()
                     if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
                         esc_menu()
+                # отрисовка ячеек инвентаря
                 for x in range(person.personalities[active_person].number_x_y[0]):
                     for y in range(person.personalities[active_person].number_x_y[1]):
                         display.blit(pygame.image.load('../Data/items/item_sell.jpg'), (360 + 120 * x, 720 - 120 * y))
+                # отрисовка иконки предмета, или текста
                 for item in range(len(self.invent)):
                     if self.invent[item] is not None:
                         display.blit(self.invent[item].image,
