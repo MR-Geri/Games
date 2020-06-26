@@ -12,31 +12,14 @@ class Items_DMG:
         self.sell_y = y
 
     def move(self, x, y, pers):
+        temp = [pers.left_arm, pers.right_arm, 0, pers.back]
         for var in self.variation_move:
             if x == var[0] and y == var[1]:
-                if f'{x}{y}' == '01':
-                    if f'{self.sell_x}{self.sell_y}' == '11':
-                        pers.left_arm = pers.right_arm
-                        pers.right_arm = None
-                    elif f'{self.sell_x}{self.sell_y}' == '31':
-                        pers.left_arm = pers.back
-                        pers.back = None
-                elif f'{x}{y}' == '11':
-                    if f'{self.sell_x}{self.sell_y}' == '01':
-                        pers.right_arm = pers.left_arm
-                        pers.left_arm = None
-                    elif f'{self.sell_x}{self.sell_y}' == '31':
-                        pers.right_arm = pers.back
-                        pers.back = None
-                elif f'{x}{y}' == '31':
-                    if f'{self.sell_x}{self.sell_y}' == '01':
-                        pers.back = pers.left_arm
-                        pers.left_arm = None
-                    elif f'{self.sell_x}{self.sell_y}' == '11':
-                        pers.back = pers.right_arm
-                        pers.right_arm = None
+                temp[x] = temp[self.sell_x]
+                temp[self.sell_x] = None
                 self.sell_x = x
                 self.sell_y = y
+                pers.left_arm, pers.right_arm, pers.back = temp[0], temp[1], temp[3]
 
 
 class Items_small_object:

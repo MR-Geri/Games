@@ -223,7 +223,6 @@ def start_game():
                     for i in self.invent:
                         if i.sell_x == self.last_sell[0] and i.sell_y == self.last_sell[1]:
                             i.move(pos_cell[0], pos_cell[1], person.personalities[active_person])
-                            print(person)
                 self.col_vo_click, self.last_sell = 0, None
             self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
 
