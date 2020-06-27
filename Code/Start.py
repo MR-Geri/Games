@@ -70,7 +70,6 @@ FPS = 60
 active_display = 0
 FullScreen = False
 volume = float(json.load(open('../Save_Loading/settings.json')))
-DATA_SAVE = json.load(open('../Save_Loading/save.json'))
 
 
 def is_active_display():
@@ -194,7 +193,7 @@ def start_game():
 
     class Inventory:
         def __init__(self):
-            pers = person.personalities[active_person]
+            pers = person.personage
             self.last_left_click = 0
             self.col_vo_click = 0
             self.last_sell = None
@@ -222,7 +221,7 @@ def start_game():
                 if pos_cell != self.last_sell and self.last_sell is not None:
                     for i in self.invent:
                         if i.sell_x == self.last_sell[0] and i.sell_y == self.last_sell[1]:
-                            i.move(pos_cell[0], pos_cell[1], person.personalities[active_person])
+                            i.move(pos_cell[0], pos_cell[1], person.personage)
                 self.col_vo_click, self.last_sell = 0, None
             self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
 
@@ -243,7 +242,7 @@ def start_game():
                 print_text('ноги', 625, 760, font_size=30)
                 print_text('ступни', 730, 760, font_size=30)
 
-            global key_e, back, active_person
+            global key_e, back
             global left, right, up, down
 
             left = right = up = down = False
@@ -269,8 +268,8 @@ def start_game():
                         esc_menu()
                 inventory.mouse_click()
                 # отрисовка ячеек инвентаря
-                for x in range(person.personalities[active_person].number_x_y[0]):
-                    for y in range(person.personalities[active_person].number_x_y[1]):
+                for x in range(person.personage.number_x_y[0]):
+                    for y in range(person.personage.number_x_y[1]):
                         display.blit(pygame.image.load('../Data/items/item_sell.jpg'), (360 + 120 * x, 720 - 120 * y))
                 # отрисовка иконки предмета, или текста
                 item_print()
@@ -463,14 +462,16 @@ def start_game():
             # Карта. Персонажи. Положение картинки игрока. Положение камеры.
             data_t = [[], [], [], []]
             data_t[0] = save_map
-            for pers in person.personalities:
-                temp = [pers.name, pers.surname, pers.age, list(pers.special), list(pers.skills), list(pers.buff),
-                        list(pers.de_buff), pers.hp, pers.hunger, pers.water, pers.number_x_y,
-                        pers.stress, pers.head, pers.body, pers.legs, pers.feet, pers.left_arm, pers.right_arm,
-                        pers.back, pers.belt, pers.pockets]
-                data_t[1].append(temp)
+            data_t[1] = [person.personage.name, person.personage.surname, person.personage.age,
+                         list(person.personage.special), list(person.personage.skills), list(person.personage.buff),
+                         list(person.personage.de_buff), person.personage.hp, person.personage.hunger,
+                         person.personage.water, person.personage.number_x_y, person.personage.stress,
+                         person.personage.head, person.personage.body, person.personage.legs, person.personage.feet,
+                         person.personage.left_arm, person.personage.right_arm, person.personage.back,
+                         person.personage.belt, person.personage.pockets]
             data_t[2] = [all_entity.hero.rect.x, all_entity.hero.rect.y]
             data_t[3] = [all_entity.cam.rect.x, all_entity.cam.rect.y]
+
             # сохранение или замена
             try:
                 data = json.load(open('../Save_Loading/save.json'))
@@ -495,33 +496,30 @@ def start_game():
             flag_esc_menu = False
 
     def load_game():
-        global DATA_SAVE, back
-
         def load(n):
             def helper_load():
                 global person
                 per = DATA_SAVE[n][1]
-                person = Data_pers(len(per), True)
-                for pers in range(len(per)):
-                    person.personalities[pers].name, person.personalities[pers].surname = per[pers][0], per[pers][1]
-                    person.personalities[pers].age = per[pers][2]
-                    person.personalities[pers].special = set(per[pers][3])
-                    person.personalities[pers].skills = set(per[pers][4])
-                    person.personalities[pers].buff = set(per[pers][5])
-                    person.personalities[pers].de_buff = set(per[pers][6])
-                    person.personalities[pers].hp = per[pers][7]
-                    person.personalities[pers].hunger, person.personalities[pers].water = per[pers][8], per[pers][9]
-                    person.personalities[pers].number_x_y = per[pers][10]
-                    person.personalities[pers].stress = per[pers][11]
-                    person.personalities[pers].head = per[pers][12]
-                    person.personalities[pers].body = per[pers][13]
-                    person.personalities[pers].legs = per[pers][14]
-                    person.personalities[pers].feet = per[pers][15]
-                    person.personalities[pers].left_arm = per[pers][16]
-                    person.personalities[pers].right_arm = per[pers][17]
-                    person.personalities[pers].back = per[pers][18]
-                    person.personalities[pers].belt = per[pers][19]
-                    person.personalities[pers].pockets = per[pers][20]
+                person = Data_pers()
+                person.personage.name, person.personage.surname = per[0], per[1]
+                person.personage.age = per[2]
+                person.personage.special = set(per[3])
+                person.personage.skills = set(per[4])
+                person.personage.buff = set(per[5])
+                person.personage.de_buff = set(per[6])
+                person.personage.hp = per[7]
+                person.personage.hunger, person.personage.water = per[8], per[9]
+                person.personage.number_x_y = per[10]
+                person.personage.stress = per[11]
+                person.personage.head = per[12]
+                person.personage.body = per[13]
+                person.personage.legs = per[14]
+                person.personage.feet = per[15]
+                person.personage.left_arm = per[16]
+                person.personage.right_arm = per[17]
+                person.personage.back = per[18]
+                person.personage.belt = per[19]
+                person.personage.pockets = per[20]
                 print(person)
                 working_objects([DATA_SAVE[n][0], DATA_SAVE[n][2], DATA_SAVE[n][3]])
                 print(f'Игра загружена.')
@@ -583,6 +581,8 @@ def start_game():
                             back()
                     pygame.display.update()
 
+            global back
+            DATA_SAVE = json.load(open('../Save_Loading/save.json'))
             if DATA_SAVE[n] is not None:
                 load_menu()
             else:
@@ -749,7 +749,7 @@ def start_game():
         def one(self):
             global person
             if person is None:
-                person = Data_pers(1)
+                person = Data_pers()
                 print(person)
                 working_objects()
                 save_game()
