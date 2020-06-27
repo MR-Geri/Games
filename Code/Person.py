@@ -171,11 +171,13 @@ class Data_pers:
         self.personage = Personage()
         #  добавление предметов в инвентарь
         data = Data.file_data
+        # Оружие
         self.personage.right_arm = data.AXE[0]
+        # Предметы
         self.personage.pockets[0] = data.SMALL_OBJECT[0]
-        # pers.pockets[1] = data.SMALL_OBJECT[1]
-        # pers.back = data.BACKPACK[0]
-        # pers.back[2].append(data.CANNED[0])
+        # Еда
+        self.personage.pockets[1] = data.CANNED[2]
+        self.personage.pockets[2] = data.CANNED[3]
 
     def info(self):
         special = 'нет' if self.personage.special == set() else \
@@ -203,6 +205,7 @@ class Data_pers:
                           [', '.join([i for i in temp])])
         print(f'{self.personage.name} {self.personage.surname}:\n\tВозраст: {self.personage.age}\n\t'
               f'Здоровье: {self.personage.hp}\n\tКоличество еды: {self.personage.hunger}\n\t'
+              f'Воды: {self.personage.water}\n\t'
               f'Стресс: {self.personage.stress}\n\tОсобенности:\n\t\t{special}'
               f'\n\tУмения:\n\t\t{skills}\n\tБафы:\n\t\t{buff}\n\tДебафы:\n\t\t{de_buff}\n\t'
               f'В левой руке {left_arm}.\n\tВ правой руке {right_arm}.'

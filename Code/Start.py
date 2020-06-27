@@ -209,22 +209,50 @@ def start_game():
                             self.invent.append(Code.items.item_add(name, *x, y.index(x), self.start_item.index(y)))
                             break
 
+        def update_invent(self):
+            pers = person.personage
+            self.start_item = [[pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3]],
+                               [pers.left_arm, pers.right_arm, pers.belt, pers.back],
+                               [pers.head, pers.body, pers.legs, pers.feet]]
+            self.invent = []
+            for y in self.start_item:
+                for x in y:
+                    for i in Data.file_data.ITEMS:
+                        if x in i:
+                            name = Data.file_data.ITEMS_Name[Data.file_data.ITEMS.index(i)]
+                            self.invent.append(Code.items.item_add(name, *x, y.index(x), self.start_item.index(y)))
+                            break
+
         def mouse_click(self):
             mouse, click = pygame.mouse.get_pos(), pygame.mouse.get_pressed()[0]
+            col_vo_click = self.col_vo_click
             self.col_vo_click = self.col_vo_click + 1 if click == 1 and self.last_left_click == 0 else self.col_vo_click
-            pos_cell = (mouse[0] // 120 - 3, mouse[1] // 120 - 4)
-            if self.col_vo_click == 1:
-                for i in self.invent:
-                    self.last_sell = pos_cell if i.sell_x == pos_cell[0] and i.sell_y == pos_cell[1] else self.last_sell
-                self.col_vo_click = 0 if self.last_sell is None else self.col_vo_click
-            elif self.col_vo_click == 2:
-                if pos_cell != self.last_sell and self.last_sell is not None:
+            if col_vo_click + 1 == self.col_vo_click:
+                pos_cell = (mouse[0] // 120 - 3, mouse[1] // 120 - 4)
+                if self.col_vo_click == 1:
                     for i in self.invent:
-                        if i.sell_x == self.last_sell[0] and i.sell_y == self.last_sell[1]:
-                            print('карманы', person.personage.pockets)
-                            i.move(pos_cell[0], pos_cell[1], person.personage)
-                self.col_vo_click, self.last_sell = 0, None
+                        self.last_sell = pos_cell if i.sell_x == pos_cell[0] and i.sell_y == pos_cell[1] else self.last_sell
+                    self.col_vo_click = 0 if self.last_sell is None else self.col_vo_click
+                elif self.col_vo_click == 2:
+                    if pos_cell != self.last_sell and self.last_sell is not None:
+                        for i in self.invent:
+                            if i.sell_x == self.last_sell[0] and i.sell_y == self.last_sell[1]:
+                                print(pos_cell)
+                                i.move(pos_cell[0], pos_cell[1], person.personage)
+                    elif pos_cell == self.last_sell and self.last_sell is not None:
+                        for i in self.invent:
+                            if i.sell_x == pos_cell[0] and i.sell_y == pos_cell[1]:
+                                i.use(person.personage)
+                                # Обновление статистики персонажа и обновление инвентаря
+                                inventory.update_invent()
+                                pygame.draw.rect(display, (212, 92, 0), (888, 255, 35, 90))
+                                print_text(str(person.personage.hunger), 890, 265, font_size=20)
+                                print_text(str(person.personage.water), 890, 305, font_size=20)
+                                print_text(str(person.personage.hp), 890, 345, font_size=20)
+                                #
+                    self.col_vo_click, self.last_sell = 0, None
             self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
+            pygame.display.update()
 
         def open(self):
             def item_print():
@@ -251,15 +279,21 @@ def start_game():
             flag_all_false()
             FLAG[INVENTORY] = True
             pygame.draw.rect(display, (255, 255, 255), (340, 220, 1240, 640))
-            pygame.draw.rect(display, (212, 92, 0), (350, 230, 1220, 620))
+            pygame.draw.rect(display, (212, 92, 0), (350, 230, 1220, 620))  # Это фон инвентаря
 
             display.blit(pygame.transform.scale(
                 pygame.image.load("../Data/drawing_inventory/player_front.png"), (240, 240)), (360, 240))
             display.blit(pygame.transform.scale(
                 pygame.image.load("../Data/drawing_inventory/player_back.png"), (240, 240)), (600, 240))
-            display.blit(pygame.transform.scale(
-                pygame.image.load('../Data/drawing_inventory/eat.png'), (30, 30)), (850, 255))
+            display.blit(
+                pygame.transform.scale(pygame.image.load('../Data/drawing_inventory/eat.png'), (30, 30)), (850, 255))
+            display.blit(
+                pygame.transform.scale(pygame.image.load('../Data/drawing_inventory/water.png'), (30, 30)), (850, 295))
+            display.blit(
+                pygame.transform.scale(pygame.image.load('../Data/drawing_inventory/hp.png'), (30, 30)), (850, 335))
             print_text(str(person.personage.hunger), 890, 265, font_size=20)
+            print_text(str(person.personage.water), 890, 305, font_size=20)
+            print_text(str(person.personage.hp), 890, 345, font_size=20)
             pygame.display.update()
             while FLAG[INVENTORY]:
                 is_active_display()
