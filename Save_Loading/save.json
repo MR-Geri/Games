@@ -108,8 +108,8 @@
       "Holiday",
       18,
       [
-        "frail",
         "light sleep",
+        "frail",
         "smart"
       ],
       [],
@@ -131,7 +131,6 @@
       null,
       null,
       null,
-      null,
       [
         "old_axe.png",
         "старый, лесной топор",
@@ -139,14 +138,15 @@
       ],
       null,
       null,
+      null,
       [
+        null,
+        null,
+        null,
         [
           "flashlight.png",
           "фонарик"
-        ],
-        null,
-        null,
-        null
+        ]
       ]
     ],
     [

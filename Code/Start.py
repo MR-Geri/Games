@@ -221,6 +221,7 @@ def start_game():
                 if pos_cell != self.last_sell and self.last_sell is not None:
                     for i in self.invent:
                         if i.sell_x == self.last_sell[0] and i.sell_y == self.last_sell[1]:
+                            print('карманы', person.personage.pockets)
                             i.move(pos_cell[0], pos_cell[1], person.personage)
                 self.col_vo_click, self.last_sell = 0, None
             self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
@@ -252,9 +253,13 @@ def start_game():
             pygame.draw.rect(display, (255, 255, 255), (340, 220, 1240, 640))
             pygame.draw.rect(display, (212, 92, 0), (350, 230, 1220, 620))
 
-            display.blit(pygame.transform.scale(pygame.image.load("../Data/player_front.png"), (240, 240)), (360, 240))
-            display.blit(pygame.transform.scale(pygame.image.load("../Data/player_back.png"), (240, 240)), (600, 240))
-
+            display.blit(pygame.transform.scale(
+                pygame.image.load("../Data/drawing_inventory/player_front.png"), (240, 240)), (360, 240))
+            display.blit(pygame.transform.scale(
+                pygame.image.load("../Data/drawing_inventory/player_back.png"), (240, 240)), (600, 240))
+            display.blit(pygame.transform.scale(
+                pygame.image.load('../Data/drawing_inventory/eat.png'), (30, 30)), (850, 255))
+            print_text(str(person.personage.hunger), 890, 265, font_size=20)
             pygame.display.update()
             while FLAG[INVENTORY]:
                 is_active_display()
@@ -377,7 +382,7 @@ def start_game():
                 self.x_vel = 0  # скорость перемещения. 0 - стоять на месте
                 self.y_vel = 0  # скорость вертикального перемещения
                 self.image = pygame.Surface((SIZE_SELL, SIZE_SELL))
-                self.image = pygame.image.load("../Data/player_front.png")
+                self.image = pygame.image.load("../Data/drawing_inventory/player_front.png")
                 self.image = pygame.transform.scale(self.image, (SIZE_SELL, SIZE_SELL))
                 self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)  # прямоугольный объект
                 self.last_left_click, self.last_right_click = 0, 0

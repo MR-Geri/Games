@@ -32,10 +32,14 @@ class Items_small_object:
         self.sell_y = y
 
     def move(self, x, y, pers):
+        temp = [pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3]]
         for var in self.variation_move:
             if x == var[0] and y == var[1]:
-                self.sell_y = y
+                temp[x] = temp[self.sell_x]
+                temp[self.sell_x] = None
                 self.sell_x = x
+                self.sell_y = y
+                pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3] = temp
 
 
 def item_add(name, *arg):
