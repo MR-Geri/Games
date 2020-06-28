@@ -195,7 +195,9 @@ def start_game():
         def __init__(self):
             pers = person.personage
             self.last_left_click = 0
-            self.col_vo_click = 0
+            self.last_right_click = 0
+            self.number_of_left_click = 0
+            self.number_of_right_click = 0
             self.last_sell = None
             self.start_item = [[pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3]],
                                [pers.left_arm, pers.right_arm, pers.belt, pers.back],
@@ -223,17 +225,19 @@ def start_game():
                             self.invent.append(Code.items.item_add(name, *x, y.index(x), self.start_item.index(y)))
                             break
 
-        def mouse_click(self):
-            mouse, click = pygame.mouse.get_pos(), pygame.mouse.get_pressed()[0]
-            col_vo_click = self.col_vo_click
-            self.col_vo_click = self.col_vo_click + 1 if click == 1 and self.last_left_click == 0 else self.col_vo_click
-            if col_vo_click + 1 == self.col_vo_click:
+        def mouse_click_left(self):
+            mouse, click_left = pygame.mouse.get_pos(), pygame.mouse.get_pressed()[0]
+            number_of_left_click_before = self.number_of_left_click
+            self.number_of_left_click = self.number_of_left_click + 1 if click_left == 1 and self.last_left_click == 0 \
+                else self.number_of_left_click
+            if number_of_left_click_before + 1 == self.number_of_left_click:
                 pos_cell = (mouse[0] // 120 - 3, mouse[1] // 120 - 4)
-                if self.col_vo_click == 1:
+                if self.number_of_left_click == 1:
                     for i in self.invent:
-                        self.last_sell = pos_cell if i.sell_x == pos_cell[0] and i.sell_y == pos_cell[1] else self.last_sell
-                    self.col_vo_click = 0 if self.last_sell is None else self.col_vo_click
-                elif self.col_vo_click == 2:
+                        self.last_sell = pos_cell if i.sell_x == pos_cell[0]\
+                                                     and i.sell_y == pos_cell[1] else self.last_sell
+                    self.number_of_left_click = 0 if self.last_sell is None else self.number_of_left_click
+                elif self.number_of_left_click == 2:
                     if pos_cell != self.last_sell and self.last_sell is not None:
                         for i in self.invent:
                             if i.sell_x == self.last_sell[0] and i.sell_y == self.last_sell[1]:
@@ -250,9 +254,23 @@ def start_game():
                                 print_text(str(person.personage.water), 890, 305, font_size=20)
                                 print_text(str(person.personage.hp), 890, 345, font_size=20)
                                 #
-                    self.col_vo_click, self.last_sell = 0, None
+                    self.number_of_left_click, self.last_sell = 0, None
             self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
             pygame.display.update()
+
+        def mouse_click_right(self):
+            mouse, click_right = pygame.mouse.get_pos(), pygame.mouse.get_pressed()[2]
+            number_of_right_click_before = self.number_of_right_click
+            self.number_of_right_click = self.number_of_right_click + 1 \
+                if click_right == 1 and self.last_right_click == 0 else self.number_of_right_click
+            if number_of_right_click_before + 1 == self.number_of_left_click:
+                pos_cell = (mouse[0] // 120 - 3, mouse[1] // 120 - 4)
+                if self.number_of_right_click == 1:
+                    pass
+                elif self.number_of_right_click == 2:
+                    # закрыть эти кнопки
+                    pass
+            self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
 
         def open(self):
             def item_print():
@@ -305,7 +323,8 @@ def start_game():
                         game()
                     if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
                         esc_menu()
-                inventory.mouse_click()
+                inventory.mouse_click_left()
+                inventory.mouse_click_right()
                 # отрисовка ячеек инвентаря
                 for x in range(person.personage.number_x_y[0]):
                     for y in range(person.personage.number_x_y[1]):
