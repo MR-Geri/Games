@@ -21,6 +21,9 @@ class Items_dmg:
                 self.sell_y = y
                 pers.left_arm, pers.right_arm, pers.back = temp[0], temp[1], temp[3]
 
+    def use(self, pers):
+        print(self.name, 'юзнуть низя')
+
 
 class Items_small_object:
     def __init__(self, way, name, x, y):
@@ -40,6 +43,9 @@ class Items_small_object:
                 self.sell_x = x
                 self.sell_y = y
                 pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3] = pockets
+
+    def use(self, pers):
+        print(self.name, 'юзнуть низя')
 
 
 class Items_eat:
