@@ -211,6 +211,12 @@ def start_game():
                             self.invent.append(Code.items.item_add(name, *x, y.index(x), self.start_item.index(y)))
                             break
 
+        def print_stats(self):
+            pygame.draw.rect(display, (212, 92, 0), (888, 255, 35, 90))
+            print_text(str(person.personage.hunger), 890, 265, font_size=20)
+            print_text(str(person.personage.water), 890, 305, font_size=20)
+            print_text(str(person.personage.hp), 890, 345, font_size=20)
+
         def update_invent(self):
             pers = person.personage
             self.start_item = [[pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3]],
@@ -241,19 +247,8 @@ def start_game():
                     if pos_cell != self.last_sell and self.last_sell is not None:
                         for i in self.invent:
                             if i.sell_x == self.last_sell[0] and i.sell_y == self.last_sell[1]:
-                                print(pos_cell)
                                 i.move(pos_cell[0], pos_cell[1], person.personage)
-                    elif pos_cell == self.last_sell and self.last_sell is not None:
-                        for i in self.invent:
-                            if i.sell_x == pos_cell[0] and i.sell_y == pos_cell[1]:
-                                i.use(person.personage)
-                                # Обновление статистики персонажа и обновление инвентаря
-                                inventory.update_invent()
-                                pygame.draw.rect(display, (212, 92, 0), (888, 255, 35, 90))
-                                print_text(str(person.personage.hunger), 890, 265, font_size=20)
-                                print_text(str(person.personage.water), 890, 305, font_size=20)
-                                print_text(str(person.personage.hp), 890, 345, font_size=20)
-                                #
+                                print('Предмет перемещён')
                     self.number_of_left_click, self.last_sell = 0, None
             self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
             pygame.display.update()
@@ -263,14 +258,46 @@ def start_game():
             number_of_right_click_before = self.number_of_right_click
             self.number_of_right_click = self.number_of_right_click + 1 \
                 if click_right == 1 and self.last_right_click == 0 else self.number_of_right_click
-            if number_of_right_click_before + 1 == self.number_of_left_click:
+            if number_of_right_click_before + 1 == self.number_of_right_click:
                 pos_cell = (mouse[0] // 120 - 3, mouse[1] // 120 - 4)
                 if self.number_of_right_click == 1:
-                    pass
-                elif self.number_of_right_click == 2:
-                    # закрыть эти кнопки
-                    pass
-            self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
+                    for i in self.invent:
+                        if i.sell_x == pos_cell[0] and i.sell_y == pos_cell[1]:
+                            x, y = mouse[0] + 30, mouse[1] + 30
+                            pygame.draw.rect(display, (48, 213, 200),
+                                             (x, y, 215, 40))
+                            print_text('Использовать', x + 10, y + 5)
+                            pygame.display.update()
+                            while True:
+                                if x < pygame.mouse.get_pos()[0] < x + 215 \
+                                        and y < pygame.mouse.get_pos()[1] < y + 40\
+                                        and pygame.mouse.get_pressed()[0] == 1:
+                                    pygame.draw.rect(display, (0, 255, 255),
+                                                     (x, y, 215, 40))
+                                    print_text('Использовать', x + 10, y + 5)
+                                    self.number_of_right_click = 0
+                                    self.last_right_click = 0
+                                    i.use(person.personage)
+                                    # Обновление статистики персонажа и обновление инвентаря
+                                    inventory.update_invent()
+                                    inventory.print_stats()
+                                    inventory.open()
+                                    print('Предмет использован')
+                                    break
+                                elif pygame.mouse.get_pressed()[0] == 1:
+                                    self.number_of_right_click = 0
+                                    self.last_right_click = 0
+                                    inventory.open()
+                                    break
+                                for e in pygame.event.get():
+                                    if e.type == pygame.QUIT:
+                                        pygame.quit()
+                                        quit()
+                                    if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
+                                        esc_menu()
+
+                    self.number_of_right_click = 0
+            self.last_right_click = 0 if pygame.mouse.get_pressed()[2] == 0 else 1
 
         def open(self):
             def item_print():
@@ -309,9 +336,7 @@ def start_game():
                 pygame.transform.scale(pygame.image.load('../Data/drawing_inventory/water.png'), (30, 30)), (850, 295))
             display.blit(
                 pygame.transform.scale(pygame.image.load('../Data/drawing_inventory/hp.png'), (30, 30)), (850, 335))
-            print_text(str(person.personage.hunger), 890, 265, font_size=20)
-            print_text(str(person.personage.water), 890, 305, font_size=20)
-            print_text(str(person.personage.hp), 890, 345, font_size=20)
+            inventory.print_stats()
             pygame.display.update()
             while FLAG[INVENTORY]:
                 is_active_display()
@@ -329,7 +354,7 @@ def start_game():
                 for x in range(person.personage.number_x_y[0]):
                     for y in range(person.personage.number_x_y[1]):
                         display.blit(pygame.image.load('../Data/items/item_sell.jpg'), (360 + 120 * x, 720 - 120 * y))
-                # отрисовка иконки предмета, или текста
+                # отрисовка текста
                 item_print()
                 for item in self.invent:
                     display.blit(pygame.image.load('../Data/items/item_sell.jpg'),
@@ -520,7 +545,7 @@ def start_game():
             # Карта. Персонажи. Положение картинки игрока. Положение камеры.
             data_t = [[], [], [], []]
             data_t[0] = save_map
-            data_t[1] = [person.personage.name, person.personage.surname, person.personage.age,
+            data_t[1] = [person.personage.name, person.personage.surname, person.personage.age, person.personage.dmg,
                          list(person.personage.special), list(person.personage.skills), list(person.personage.buff),
                          list(person.personage.de_buff), person.personage.hp, person.personage.hunger,
                          person.personage.water, person.personage.number_x_y, person.personage.stress,
@@ -561,23 +586,24 @@ def start_game():
                 person = Data_pers()
                 person.personage.name, person.personage.surname = per[0], per[1]
                 person.personage.age = per[2]
-                person.personage.special = set(per[3])
-                person.personage.skills = set(per[4])
-                person.personage.buff = set(per[5])
-                person.personage.de_buff = set(per[6])
-                person.personage.hp = per[7]
-                person.personage.hunger, person.personage.water = per[8], per[9]
-                person.personage.number_x_y = per[10]
-                person.personage.stress = per[11]
-                person.personage.head = per[12]
-                person.personage.body = per[13]
-                person.personage.legs = per[14]
-                person.personage.feet = per[15]
-                person.personage.left_arm = per[16]
-                person.personage.right_arm = per[17]
-                person.personage.back = per[18]
-                person.personage.belt = per[19]
-                person.personage.pockets = per[20]
+                person.personage.dmg = per[3]
+                person.personage.special = set(per[4])
+                person.personage.skills = set(per[5])
+                person.personage.buff = set(per[6])
+                person.personage.de_buff = set(per[7])
+                person.personage.hp = per[8]
+                person.personage.hunger, person.personage.water = per[9], per[10]
+                person.personage.number_x_y = per[11]
+                person.personage.stress = per[12]
+                person.personage.head = per[13]
+                person.personage.body = per[14]
+                person.personage.legs = per[15]
+                person.personage.feet = per[16]
+                person.personage.left_arm = per[17]
+                person.personage.right_arm = per[18]
+                person.personage.back = per[19]
+                person.personage.belt = per[20]
+                person.personage.pockets = per[21]
                 print(person)
                 working_objects([DATA_SAVE[n][0], DATA_SAVE[n][2], DATA_SAVE[n][3]])
                 print(f'Игра загружена.')

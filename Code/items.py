@@ -1,4 +1,5 @@
 import pygame
+import Code.Person
 
 
 class Items_dmg:
@@ -70,7 +71,7 @@ class Items_eat:
 
     def use(self, pers):
         pockets = [pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3]]
-        pers.hunger += pockets[self.sell_x][2]  # прибавляем единицы из file_data
+        Code.Person.Action(pers).eat(pockets[self.sell_x][2])  # прибавляем единицы из file_data
         pockets[self.sell_x] = None
         pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3] = pockets
 
