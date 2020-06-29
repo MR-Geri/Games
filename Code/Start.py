@@ -203,22 +203,36 @@ def start_game():
                                [pers.left_arm, pers.right_arm, pers.belt, pers.back],
                                [pers.head, pers.body, pers.legs, pers.feet]]
             self.invent = []
+            """update_invent"""
             for y in self.start_item:
                 for x in y:
                     for i in Data.file_data.ITEMS:
                         if x in i:
                             name = Data.file_data.ITEMS_Name[Data.file_data.ITEMS.index(i)]
-                            self.invent.append(Code.items.item_add(name, *x, y.index(x), self.start_item.index(y)))
+                            self.invent.append(Code.items.item_add
+                                               (name, *x, y.index(x), self.start_item.index(y)))
                             break
+            # Проверка количества урона у персонажа, если оружие в руках
+            pers.dmg = Code.Person.DMG_START
+            for i in self.invent:
+                try:
+                    if i.dmg is not None:
+                        if [i.sell_x, i.sell_y] == [0, 1] or [i.sell_x, i.sell_x] == [1, 1]:
+                            pers.dmg += i.dmg
+                except:
+                    pass
+            #
 
         def print_stats(self):
-            pygame.draw.rect(display, (212, 92, 0), (888, 255, 35, 90))
+            pygame.draw.rect(display, (212, 92, 0), (888, 255, 35, 160))
             print_text(str(person.personage.hunger), 890, 265, font_size=20)
             print_text(str(person.personage.water), 890, 305, font_size=20)
             print_text(str(person.personage.hp), 890, 345, font_size=20)
+            print_text(str(person.personage.dmg), 890, 385, font_size=20)
 
         def update_invent(self):
             pers = person.personage
+            # Апдейт инвентаря
             self.start_item = [[pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3]],
                                [pers.left_arm, pers.right_arm, pers.belt, pers.back],
                                [pers.head, pers.body, pers.legs, pers.feet]]
@@ -230,6 +244,15 @@ def start_game():
                             name = Data.file_data.ITEMS_Name[Data.file_data.ITEMS.index(i)]
                             self.invent.append(Code.items.item_add(name, *x, y.index(x), self.start_item.index(y)))
                             break
+            # Проверка количества урона у персонажа, если оружие в руках
+            pers.dmg = Code.Person.DMG_START
+            for i in self.invent:
+                try:
+                    if i.dmg is not None:
+                        if [i.sell_x, i.sell_y] == [0, 1] or [i.sell_x, i.sell_x] == [1, 1]:
+                            pers.dmg += i.dmg
+                except:
+                    pass
 
         def mouse_click_left(self):
             mouse, click_left = pygame.mouse.get_pos(), pygame.mouse.get_pressed()[0]
@@ -247,8 +270,13 @@ def start_game():
                     if pos_cell != self.last_sell and self.last_sell is not None:
                         for i in self.invent:
                             if i.sell_x == self.last_sell[0] and i.sell_y == self.last_sell[1]:
-                                i.move(pos_cell[0], pos_cell[1], person.personage)
-                                print('Предмет перемещён')
+                                empty_sell = 0
+                                for j in self.invent:
+                                    empty_sell = 1 if j.sell_x == pos_cell[0] and \
+                                                      j.sell_y == pos_cell[1] else empty_sell
+                                if empty_sell == 0:
+                                    i.move(pos_cell[0], pos_cell[1], person.personage)
+                                    print('Предмет перемещён')
                     self.number_of_left_click, self.last_sell = 0, None
             self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
             pygame.display.update()
@@ -279,8 +307,6 @@ def start_game():
                                     self.last_right_click = 0
                                     i.use(person.personage)
                                     # Обновление статистики персонажа и обновление инвентаря
-                                    inventory.update_invent()
-                                    inventory.print_stats()
                                     inventory.open()
                                     print('Предмет использован')
                                     break
@@ -336,6 +362,8 @@ def start_game():
                 pygame.transform.scale(pygame.image.load('../Data/drawing_inventory/water.png'), (30, 30)), (850, 295))
             display.blit(
                 pygame.transform.scale(pygame.image.load('../Data/drawing_inventory/hp.png'), (30, 30)), (850, 335))
+            display.blit(
+                pygame.transform.scale(pygame.image.load('../Data/drawing_inventory/sword.png'), (30, 30)), (850, 375))
             inventory.print_stats()
             pygame.display.update()
             while FLAG[INVENTORY]:
@@ -355,6 +383,8 @@ def start_game():
                     for y in range(person.personage.number_x_y[1]):
                         display.blit(pygame.image.load('../Data/items/item_sell.jpg'), (360 + 120 * x, 720 - 120 * y))
                 # отрисовка текста
+                inventory.update_invent()
+                inventory.print_stats()
                 item_print()
                 for item in self.invent:
                     display.blit(pygame.image.load('../Data/items/item_sell.jpg'),
