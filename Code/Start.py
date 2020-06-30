@@ -396,11 +396,12 @@ class Inventory:
 
 def working_objects(data_saves=None):
     class Updating:
-        def __init__(self, map, hero, cam):
+        def __init__(self, map, hero, cam, enemy):
             self.map = map
             self.cam = cam
             self.hero = hero
-            self.invent = False
+            self.enemy = enemy
+            self.invent_is_open = False
 
         def update(self):
             display.blit(bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
@@ -411,10 +412,12 @@ def working_objects(data_saves=None):
                 self.map[i[0]][i[1]].update(pygame.mouse.get_pos())
             self.hero.update(pygame.mouse.get_pos())  # обновление персонажа
             # отрисовка карты
-            for i in self.map:
-                for g in i:
-                    display.blit(g.image, camera.apply(g))
+            for y in self.map:
+                for x in y:
+                    display.blit(x.image, camera.apply(x))
             #
+            for i in self.enemy:
+                display.blit(i.image, camera.apply(i))
             display.blit(self.hero.image, camera.apply(self.hero))  # отрисовка персонажа
             pygame.display.update()
 
@@ -426,7 +429,7 @@ def working_objects(data_saves=None):
             self.rect = self.image.get_rect(center=(x + SIZE_SELL // 2, y + SIZE_SELL // 2))
 
         def update(self, mouse):
-            if all_entity.invent is False:
+            if all_entity.invent_is_open is False:
                 # Перемещение персонажа на ячейку с точкой.
                 local_x = (self.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) * SIZE_SELL + 9 * SIZE_SELL
                 local_y = (self.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) * SIZE_SELL + 5 * SIZE_SELL
@@ -511,7 +514,7 @@ def working_objects(data_saves=None):
             local_x = (self.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) * SIZE_SELL + 9 * SIZE_SELL
             local_y = (self.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) * SIZE_SELL + 5 * SIZE_SELL
             # Нажатие по персонажу ЛКМ
-            if all_entity.invent is False:
+            if all_entity.invent_is_open is False:
                 if local_x - SIZE_SELL < mouse[0] < local_x and \
                         local_y - SIZE_SELL / 2 < mouse[1] < local_y + SIZE_SELL / 2 and \
                         pygame.mouse.get_pressed()[0] == 1 and self.last_left_click == 0:
@@ -532,12 +535,15 @@ def working_objects(data_saves=None):
                 self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
             # Открытие инвентаря
             key_e = 1 if key_e > 2 else key_e
-            all_entity.invent = True if key_e == 2 else False
+            all_entity.invent_is_open = True if key_e == 2 else False
 
     class Enemy(pygame.sprite.Sprite):
-        def __init__(self):
+        def __init__(self, x, y):
             pygame.sprite.Sprite.__init__(self)
-            self.image = pygame.image.load
+            self.image = pygame.image.load("../Data/drawing/slime.png")
+            self.image = pygame.transform.scale(self.image, (SIZE_SELL, SIZE_SELL))
+            self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
+
     global save_map, camera, all_entity
     # Загрузочный экран
     display.blit(back_menu, (0, 0))
@@ -550,23 +556,31 @@ def working_objects(data_saves=None):
     if data_saves is not None:
         # Загрузка карты
         map_y = []
+        enemy_list = []
         save_map = data_saves[0]
         for y in range(QUANTITY_SELL[1]):
             map_x = []
             for x in range(QUANTITY_SELL[0]):
                 map_x.append(Map(x * SIZE_SELL, y * SIZE_SELL, data_sell[int(save_map[y][x])]))
             map_y.append(map_x)
+        for i in data_saves[3]:
+            enemy_list.append(Enemy(i[0], i[1]))
+        print(enemy_list)
         all_entity = Updating(map_y,
                               Hero(*data_saves[1]),
-                              Cums(*data_saves[2]))
+                              Cums(*data_saves[2]),
+                              enemy_list)
     elif data_saves is None:
         # Создание и сохранение карты
         save_map = []
         map_y = []
+        enemy_list = []
         for y in range(QUANTITY_SELL[1]):
             save_map_x = ''
             map_x = []
             for x in range(QUANTITY_SELL[0]):
+                if random.randint(0, 20) == 1:
+                    enemy_list.append(Enemy(x * SIZE_SELL, y * SIZE_SELL))
                 if y == 51 and (x == 50 or x == 51):
                     graphic_cell = data_sell[0]
                 else:
@@ -577,7 +591,8 @@ def working_objects(data_saves=None):
             save_map.append(save_map_x)
         all_entity = Updating(map_y,
                               Hero(51 * SIZE_SELL, 51 * SIZE_SELL),
-                              Cums(51 * SIZE_SELL, 51 * SIZE_SELL + SIZE_SELL // 2))
+                              Cums(51 * SIZE_SELL, 51 * SIZE_SELL + SIZE_SELL // 2),
+                              enemy_list)
     camera = Camera(camera_configure, total_width, total_height)
 
 
@@ -585,7 +600,7 @@ def save_game():
     global person, save_map, flag_esc_menu
     if flag_esc_menu:
         # Карта. Персонажи. Положение картинки игрока. Положение камеры.
-        data_t = [[], [], [], []]
+        data_t = [[] for i in range(5)]
         data_t[0] = save_map
         data_t[1] = [person.personage.name, person.personage.surname, person.personage.age, person.personage.dmg,
                      list(person.personage.special), list(person.personage.skills), list(person.personage.buff),
@@ -596,6 +611,8 @@ def save_game():
                      person.personage.belt, person.personage.pockets]
         data_t[2] = [all_entity.hero.rect.x, all_entity.hero.rect.y]
         data_t[3] = [all_entity.cam.rect.x, all_entity.cam.rect.y]
+        for i in all_entity.enemy:
+            data_t[4].append([i.rect.x, i.rect.y])
 
         # сохранение или замена
         try:
@@ -648,7 +665,7 @@ def load_game():
             person.personage.belt = per[20]
             person.personage.pockets = per[21]
             print(person)
-            working_objects([DATA_SAVE[n][0], DATA_SAVE[n][2], DATA_SAVE[n][3]])
+            working_objects([DATA_SAVE[n][0], DATA_SAVE[n][2], DATA_SAVE[n][3], DATA_SAVE[n][4]])
             print(f'Игра загружена.')
             game()
 
