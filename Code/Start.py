@@ -405,11 +405,13 @@ def working_objects(data_saves=None):
                 for x in y:
                     display.blit(x.image, camera.apply(x))
             #
-            for i in self.move:
-                display.blit(i.image, camera.apply(i))
-                i.update(pygame.mouse.get_pos())
-            for i in self.enemy:
-                display.blit(i.image, camera.apply(i))
+            for move in self.move:
+                display.blit(move.image, camera.apply(move))
+                move.update(pygame.mouse.get_pos())
+                for enemy in self.enemy:
+                    enemy.update()
+            for enemy in self.enemy:
+                display.blit(enemy.image, camera.apply(enemy))
             display.blit(self.hero.image, camera.apply(self.hero))  # отрисовка персонажа
             pygame.display.update()
 
@@ -543,9 +545,50 @@ def working_objects(data_saves=None):
             self.image = pygame.image.load("../Data/drawing/slime.png")
             self.image = pygame.transform.scale(self.image, (SIZE_SELL - 8, SIZE_SELL - 8))
             self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
+            self.speed = 120
+            self.vision = 5
+            self.radius_safety = 3
+            self.random_move = (0, 30)
 
         def update(self):
-            all_entity.hero.rect.x
+            x = (self.rect.x - all_entity.hero.rect.x) / 120
+            y = (self.rect.y - all_entity.hero.rect.y) / 120
+            move_x = 0
+            move_y = 0
+            flag = True
+            if abs(x) <= self.vision and abs(y) <= self.vision and random.randint(*self.random_move) == 1:
+                if x > self.radius_safety:
+                    if y > self.radius_safety:
+                        move_x = -self.speed
+                        move_y = -self.speed
+                    elif y < -self.radius_safety:
+                        move_x = -self.speed
+                        move_y = self.speed
+                    else:
+                        move_x = -self.speed
+                elif x < -self.radius_safety:
+                    if y > self.radius_safety:
+                        move_x = self.speed
+                        move_y = -self.speed
+                    elif y < -self.radius_safety:
+                        move_x = self.speed
+                        move_y = self.speed
+                    else:
+                        move_x = self.speed
+                else:
+                    if y > self.radius_safety:
+                        move_y = -self.speed
+                    elif y < -self.radius_safety:
+                        move_y = self.speed
+                move_x += self.rect.x
+                move_y += self.rect.y
+                for enemy in all_entity.enemy:
+                    flag = False if enemy.rect.x == move_x and enemy.rect.y == move_y else flag
+                if flag:
+                    print(move_y, move_x)
+                    self.rect.x = move_x
+                    self.rect.y = move_y
+
     global save_map, camera, all_entity
     # Загрузочный экран
     display.blit(back_menu, (0, 0))
