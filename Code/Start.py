@@ -544,6 +544,8 @@ def working_objects(data_saves=None):
             self.image = pygame.transform.scale(self.image, (SIZE_SELL - 8, SIZE_SELL - 8))
             self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
 
+        def update(self):
+            all_entity.hero.rect.x
     global save_map, camera, all_entity
     # Загрузочный экран
     display.blit(back_menu, (0, 0))
@@ -620,7 +622,6 @@ def save_game():
                 enemy[i.rect.y].append(i.rect.x)
         data_t[4] = enemy
         # сохранение или замена
-        start = time.time()
         try:
             data = json.load(open('../Save_Loading/save.json'))
         except:
