@@ -10,7 +10,6 @@ import time
 
 
 timer = pygame.time.Clock()
-active_move_sell = []
 display = None
 back = None
 # Flag
@@ -50,14 +49,6 @@ data_sell_image = [pygame.image.load(f'../Data/data_sell/cell.jpg'),
                    pygame.image.load(f'../Data/data_sell/cell_2.jpg'),
                    pygame.image.load(f'../Data/data_sell/cell_3.jpg'),
                    pygame.image.load(f'../Data/data_sell/cell_4.jpg')]
-data_sell_active = ['cell_ellipse.jpg', 'cell_ellipse_0.jpg', 'cell_ellipse_1.jpg', 'cell_ellipse_2.jpg',
-                    'cell_ellipse_3.jpg', 'cell_ellipse_4.jpg']
-data_sell_active_image = [pygame.image.load(f'../Data/data_sell/cell_ellipse.jpg'),
-                          pygame.image.load(f'../Data/data_sell/cell_ellipse_0.jpg'),
-                          pygame.image.load(f'../Data/data_sell/cell_ellipse_1.jpg'),
-                          pygame.image.load(f'../Data/data_sell/cell_ellipse_2.jpg'),
-                          pygame.image.load(f'../Data/data_sell/cell_ellipse_3.jpg'),
-                          pygame.image.load(f'../Data/data_sell/cell_ellipse_4.jpg')]
 # Кнопки
 button_left_click = False
 left_click = False
@@ -398,6 +389,7 @@ def working_objects(data_saves=None):
     class Updating:
         def __init__(self, map, hero, cam, enemy):
             self.map = map
+            self.move = []
             self.cam = cam
             self.hero = hero
             self.enemy = enemy
@@ -407,29 +399,29 @@ def working_objects(data_saves=None):
             display.blit(bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
             camera.update(self.cam)  # центризируем камеру относительно персонажа
             self.cam.update(left, right, up, down)  # передвижение камеры
-            # Возврат клетки с точкой к обычной после перемещения персонажа
-            for i in active_move_sell:
-                self.map[i[0]][i[1]].update(pygame.mouse.get_pos())
             self.hero.update(pygame.mouse.get_pos())  # обновление персонажа
             # отрисовка карты
             for y in self.map:
                 for x in y:
                     display.blit(x.image, camera.apply(x))
             #
+            for i in self.move:
+                display.blit(i.image, camera.apply(i))
+                i.update(pygame.mouse.get_pos())
             for i in self.enemy:
                 display.blit(i.image, camera.apply(i))
             display.blit(self.hero.image, camera.apply(self.hero))  # отрисовка персонажа
             pygame.display.update()
 
-    class Map(pygame.sprite.Sprite):
-        def __init__(self, x, y, graphic_sell):
+    class Move(pygame.sprite.Sprite):
+        def __init__(self, x, y):
             pygame.sprite.Sprite.__init__(self)
-            self.last_left_click, self.last_right_click = 0, 0
-            self.image = pygame.image.load(f'../Data/data_sell/{graphic_sell}')
-            self.rect = self.image.get_rect(center=(x + SIZE_SELL // 2, y + SIZE_SELL // 2))
+            self.image = pygame.image.load('../Data/data_sell/ellipse.png')
+            self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
+            self.last_left_click = 0
 
         def update(self, mouse):
-            if all_entity.invent_is_open is False:
+            if not all_entity.invent_is_open:
                 # Перемещение персонажа на ячейку с точкой.
                 local_x = (self.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) * SIZE_SELL + 9 * SIZE_SELL
                 local_y = (self.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) * SIZE_SELL + 5 * SIZE_SELL
@@ -444,9 +436,15 @@ def working_objects(data_saves=None):
                     # ---------------
                     all_entity.hero.rect.x = self.rect.x
                     all_entity.hero.rect.y = self.rect.y
-                    for i in active_move_sell:
-                        all_entity.map[i[0]][i[1]].image = data_sell_image[int(save_map[i[0]][i[1]])]
+                    all_entity.move = []
                 self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
+
+    class Map(pygame.sprite.Sprite):
+        def __init__(self, x, y, graphic_sell):
+            pygame.sprite.Sprite.__init__(self)
+            self.last_left_click, self.last_right_click = 0, 0
+            self.image = pygame.image.load(f'../Data/data_sell/{graphic_sell}')
+            self.rect = self.image.get_rect(center=(x + SIZE_SELL // 2, y + SIZE_SELL // 2))
 
     class Camera(object):
         def __init__(self, camera_func, width, height):
@@ -504,34 +502,36 @@ def working_objects(data_saves=None):
             self.image = pygame.transform.scale(self.image, (SIZE_SELL, SIZE_SELL))
             self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)  # прямоугольный объект
             self.last_left_click, self.last_right_click = 0, 0
-            self.col_vo_click = 0
 
         def update(self, mouse):
-            global active_move_sell, key_e
+            global key_e
             self.x_vel = 0
             self.y_vel = 0
             # координата персонажа относительные (1920.1080)
             local_x = (self.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) * SIZE_SELL + 9 * SIZE_SELL
             local_y = (self.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) * SIZE_SELL + 5 * SIZE_SELL
             # Нажатие по персонажу ЛКМ
-            if all_entity.invent_is_open is False:
+            if not all_entity.invent_is_open:
                 if local_x - SIZE_SELL < mouse[0] < local_x and \
                         local_y - SIZE_SELL / 2 < mouse[1] < local_y + SIZE_SELL / 2 and \
                         pygame.mouse.get_pressed()[0] == 1 and self.last_left_click == 0:
-                    self.col_vo_click += 1
-                    self.col_vo_click = 0 if self.col_vo_click > 3 else self.col_vo_click
-                    for y in range(-3, 4, 1):
-                        for x in range(-3, 4, 1):
-                            if y == 0 and x == 0:
-                                pass
-                            else:
-                                position_x = self.rect.x // 120 + x
-                                position_y = self.rect.y // 120 + y
-                                sell = data_sell_active[int(save_map[position_y][position_x])] \
-                                    if self.col_vo_click % 2 != 0 else data_sell[int(save_map[position_y][position_x])]
-                                active_move_sell.append([position_y, position_x])
-                                all_entity.map[position_y][position_x] = Map(position_x * 120, position_y * 120, sell)
-                                active_move_sell = [] if self.col_vo_click % 2 == 0 else active_move_sell
+                    if not all_entity.move:
+                        cell_move = []
+                        for y in range(-3, 4, 1):
+                            for x in range(-3, 4, 1):
+                                if y == 0 and x == 0:
+                                    pass
+                                else:
+                                    position_x = self.rect.x + x * 120
+                                    position_y = self.rect.y + y * 120
+                                    flag = True
+                                    for i in all_entity.enemy:
+                                        flag = False if i.rect.x == position_x and i.rect.y == position_y else flag
+                                    if flag:
+                                        cell_move.append(Move(position_x, position_y))
+                        all_entity.move = cell_move
+                    else:
+                        all_entity.move = []
                 self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
             # Открытие инвентаря
             key_e = 1 if key_e > 2 else key_e
@@ -541,7 +541,7 @@ def working_objects(data_saves=None):
         def __init__(self, x, y):
             pygame.sprite.Sprite.__init__(self)
             self.image = pygame.image.load("../Data/drawing/slime.png")
-            self.image = pygame.transform.scale(self.image, (SIZE_SELL, SIZE_SELL))
+            self.image = pygame.transform.scale(self.image, (SIZE_SELL - 8, SIZE_SELL - 8))
             self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
 
     global save_map, camera, all_entity
@@ -563,8 +563,9 @@ def working_objects(data_saves=None):
             for x in range(QUANTITY_SELL[0]):
                 map_x.append(Map(x * SIZE_SELL, y * SIZE_SELL, data_sell[int(save_map[y][x])]))
             map_y.append(map_x)
-        for i in data_saves[3]:
-            enemy_list.append(Enemy(i[0], i[1]))
+        for j in data_saves[3]:
+            for i in data_saves[3].get(j):
+                enemy_list.append(Enemy(int(i), int(j)))
         print(enemy_list)
         all_entity = Updating(map_y,
                               Hero(*data_saves[1]),
@@ -579,7 +580,7 @@ def working_objects(data_saves=None):
             save_map_x = ''
             map_x = []
             for x in range(QUANTITY_SELL[0]):
-                if random.randint(0, 20) == 1:
+                if (random.randint(0, 10) == 1) and ((y < 50 or y > 52) and (x < 49 or x > 53)):
                     enemy_list.append(Enemy(x * SIZE_SELL, y * SIZE_SELL))
                 if y == 51 and (x == 50 or x == 51):
                     graphic_cell = data_sell[0]
@@ -600,7 +601,7 @@ def save_game():
     global person, save_map, flag_esc_menu
     if flag_esc_menu:
         # Карта. Персонажи. Положение картинки игрока. Положение камеры.
-        data_t = [[] for i in range(5)]
+        data_t = [[] for _ in range(5)]
         data_t[0] = save_map
         data_t[1] = [person.personage.name, person.personage.surname, person.personage.age, person.personage.dmg,
                      list(person.personage.special), list(person.personage.skills), list(person.personage.buff),
@@ -611,10 +612,15 @@ def save_game():
                      person.personage.belt, person.personage.pockets]
         data_t[2] = [all_entity.hero.rect.x, all_entity.hero.rect.y]
         data_t[3] = [all_entity.cam.rect.x, all_entity.cam.rect.y]
+        enemy = {}
         for i in all_entity.enemy:
-            data_t[4].append([i.rect.x, i.rect.y])
-
+            if enemy.get(i.rect.y) is None:
+                enemy.update({i.rect.y: [i.rect.x]})
+            else:
+                enemy[i.rect.y].append(i.rect.x)
+        data_t[4] = enemy
         # сохранение или замена
+        start = time.time()
         try:
             data = json.load(open('../Save_Loading/save.json'))
         except:
