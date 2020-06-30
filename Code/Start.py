@@ -354,17 +354,17 @@ class Inventory:
         pygame.draw.rect(display, (212, 92, 0), (350, 230, 1220, 620))  # Это фон инвентаря
 
         display.blit(pygame.transform.scale(
-            pygame.image.load("../Data/drawing_inventory/player_front.png"), (240, 240)), (360, 240))
+            pygame.image.load("../Data/drawing/player_front.png"), (240, 240)), (360, 240))
         display.blit(pygame.transform.scale(
-            pygame.image.load("../Data/drawing_inventory/player_back.png"), (240, 240)), (600, 240))
+            pygame.image.load("../Data/drawing/player_back.png"), (240, 240)), (600, 240))
         display.blit(
-            pygame.transform.scale(pygame.image.load('../Data/drawing_inventory/eat.png'), (30, 30)), (850, 255))
+            pygame.transform.scale(pygame.image.load('../Data/drawing/eat.png'), (30, 30)), (850, 255))
         display.blit(
-            pygame.transform.scale(pygame.image.load('../Data/drawing_inventory/water.png'), (30, 30)), (850, 295))
+            pygame.transform.scale(pygame.image.load('../Data/drawing/water.png'), (30, 30)), (850, 295))
         display.blit(
-            pygame.transform.scale(pygame.image.load('../Data/drawing_inventory/hp.png'), (30, 30)), (850, 335))
+            pygame.transform.scale(pygame.image.load('../Data/drawing/hp.png'), (30, 30)), (850, 335))
         display.blit(
-            pygame.transform.scale(pygame.image.load('../Data/drawing_inventory/sword.png'), (30, 30)), (850, 375))
+            pygame.transform.scale(pygame.image.load('../Data/drawing/sword.png'), (30, 30)), (850, 375))
         inventory.print_stats()
         pygame.display.update()
         while FLAG[INVENTORY]:
@@ -497,8 +497,7 @@ def working_objects(data_saves=None):
             pygame.sprite.Sprite.__init__(self)
             self.x_vel = 0  # скорость перемещения. 0 - стоять на месте
             self.y_vel = 0  # скорость вертикального перемещения
-            self.image = pygame.Surface((SIZE_SELL, SIZE_SELL))
-            self.image = pygame.image.load("../Data/drawing_inventory/player_front.png")
+            self.image = pygame.image.load("../Data/drawing/player_front.png")
             self.image = pygame.transform.scale(self.image, (SIZE_SELL, SIZE_SELL))
             self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)  # прямоугольный объект
             self.last_left_click, self.last_right_click = 0, 0
@@ -535,6 +534,10 @@ def working_objects(data_saves=None):
             key_e = 1 if key_e > 2 else key_e
             all_entity.invent = True if key_e == 2 else False
 
+    class Enemy(pygame.sprite.Sprite):
+        def __init__(self):
+            pygame.sprite.Sprite.__init__(self)
+            self.image = pygame.image.load
     global save_map, camera, all_entity
     # Загрузочный экран
     display.blit(back_menu, (0, 0))
