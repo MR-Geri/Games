@@ -394,6 +394,7 @@ def working_objects(data_saves=None):
             self.hero = hero
             self.enemy = enemy
             self.invent_is_open = False
+            self.flag = False
 
         def update(self):
             display.blit(bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
@@ -408,8 +409,10 @@ def working_objects(data_saves=None):
             for move in self.move:
                 display.blit(move.image, camera.apply(move))
                 move.update(pygame.mouse.get_pos())
+            if self.move and self.flag:
                 for enemy in self.enemy:
                     enemy.update()
+            self.flag = True if not self.move else False
             for enemy in self.enemy:
                 display.blit(enemy.image, camera.apply(enemy))
             display.blit(self.hero.image, camera.apply(self.hero))  # отрисовка персонажа
@@ -546,9 +549,9 @@ def working_objects(data_saves=None):
             self.image = pygame.transform.scale(self.image, (SIZE_SELL - 8, SIZE_SELL - 8))
             self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
             self.speed = 120
-            self.vision = 5
+            self.vision = 3
             self.radius_safety = 3
-            self.random_move = (0, 30)
+            self.random_move = (0, 5)
 
         def update(self):
             x = (self.rect.x - all_entity.hero.rect.x) / 120
@@ -556,38 +559,44 @@ def working_objects(data_saves=None):
             move_x = 0
             move_y = 0
             flag = True
-            if abs(x) <= self.vision and abs(y) <= self.vision and random.randint(*self.random_move) == 1:
-                if x > self.radius_safety:
-                    if y > self.radius_safety:
-                        move_x = -self.speed
-                        move_y = -self.speed
-                    elif y < -self.radius_safety:
-                        move_x = -self.speed
-                        move_y = self.speed
+            # Если упал шанс на движение
+            if random.randint(*self.random_move) != 0:
+                # Перемещение к игроку
+                if abs(x) <= self.vision and abs(y) <= self.vision:
+                    if x > self.radius_safety:
+                        if y > self.radius_safety:
+                            move_x = -self.speed
+                            move_y = -self.speed
+                        elif y < -self.radius_safety:
+                            move_x = -self.speed
+                            move_y = self.speed
+                        else:
+                            move_x = -self.speed
+                    elif x < -self.radius_safety:
+                        if y > self.radius_safety:
+                            move_x = self.speed
+                            move_y = -self.speed
+                        elif y < -self.radius_safety:
+                            move_x = self.speed
+                            move_y = self.speed
+                        else:
+                            move_x = self.speed
                     else:
-                        move_x = -self.speed
-                elif x < -self.radius_safety:
-                    if y > self.radius_safety:
-                        move_x = self.speed
-                        move_y = -self.speed
-                    elif y < -self.radius_safety:
-                        move_x = self.speed
-                        move_y = self.speed
-                    else:
-                        move_x = self.speed
+                        if y > self.radius_safety:
+                            move_y = -self.speed
+                        elif y < -self.radius_safety:
+                            move_y = self.speed
+                    move_x += self.rect.x
+                    move_y += self.rect.y
+                    for enemy in all_entity.enemy:
+                        flag = False if enemy.rect.x == move_x and enemy.rect.y == move_y else flag
+                    if flag:
+                        self.rect.x = move_x
+                        self.rect.y = move_y
+                # перемещение по карте
                 else:
-                    if y > self.radius_safety:
-                        move_y = -self.speed
-                    elif y < -self.radius_safety:
-                        move_y = self.speed
-                move_x += self.rect.x
-                move_y += self.rect.y
-                for enemy in all_entity.enemy:
-                    flag = False if enemy.rect.x == move_x and enemy.rect.y == move_y else flag
-                if flag:
-                    print(move_y, move_x)
-                    self.rect.x = move_x
-                    self.rect.y = move_y
+                    self.rect.x += random.randint(-2, 2) * SIZE_SELL
+                    self.rect.y += random.randint(-2, 2) * SIZE_SELL
 
     global save_map, camera, all_entity
     # Загрузочный экран
@@ -611,7 +620,6 @@ def working_objects(data_saves=None):
         for j in data_saves[3]:
             for i in data_saves[3].get(j):
                 enemy_list.append(Enemy(int(i), int(j)))
-        print(enemy_list)
         all_entity = Updating(map_y,
                               Hero(*data_saves[1]),
                               Cums(*data_saves[2]),
@@ -625,7 +633,7 @@ def working_objects(data_saves=None):
             save_map_x = ''
             map_x = []
             for x in range(QUANTITY_SELL[0]):
-                if (random.randint(0, 10) == 1) and ((y < 50 or y > 52) and (x < 49 or x > 53)):
+                if (random.randint(0, 50) == 1) and ((y < 50 or y > 52) and (x < 49 or x > 53)):
                     enemy_list.append(Enemy(x * SIZE_SELL, y * SIZE_SELL))
                 if y == 51 and (x == 50 or x == 51):
                     graphic_cell = data_sell[0]
