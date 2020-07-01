@@ -56,6 +56,7 @@ left = right = up = down = False
 key_e = 1  # 1 - закрыт.
 # Персонаж
 person = None
+motion = 0
 # Настройки
 PERMISSION = (1920, 1080)
 FPS = 60
@@ -409,8 +410,12 @@ def working_objects(data_saves=None):
             for enemy in self.enemy:
                 if enemy.hp <= 0:
                     self.enemy.remove(enemy)
+                    print('Противник погиб.')
                 enemy.update(pygame.mouse.get_pos())
             for move in self.move:
+                for enemy in self.enemy:
+                    if enemy.rect.x == move.rect.x and enemy.rect.y == move.rect.y:
+                        self.move.remove(move)
                 display.blit(move.image, camera.apply(move))
                 move.update(pygame.mouse.get_pos())
             self.flag = True if not self.move else False
@@ -427,6 +432,7 @@ def working_objects(data_saves=None):
             self.last_left_click = 0
 
         def update(self, mouse):
+            global motion
             if not all_entity.invent_is_open:
                 # Перемещение персонажа на ячейку с точкой.
                 local_x = (self.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) * SIZE_SELL + 9 * SIZE_SELL
@@ -443,6 +449,8 @@ def working_objects(data_saves=None):
                     all_entity.hero.rect.x = self.rect.x
                     all_entity.hero.rect.y = self.rect.y
                     all_entity.move = []
+                    motion += 1
+                    print('Ход номер:', motion)
                 self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
 
     class Map(pygame.sprite.Sprite):
@@ -530,11 +538,7 @@ def working_objects(data_saves=None):
                                 else:
                                     position_x = self.rect.x + x * 120
                                     position_y = self.rect.y + y * 120
-                                    flag = True
-                                    for i in all_entity.enemy:
-                                        flag = False if i.rect.x == position_x and i.rect.y == position_y else flag
-                                    if flag:
-                                        cell_move.append(Move(position_x, position_y))
+                                    cell_move.append(Move(position_x, position_y))
                         all_entity.move = cell_move
                     else:
                         all_entity.move = []
@@ -558,6 +562,7 @@ def working_objects(data_saves=None):
             self.last_left_click = True
 
         def update(self, mouse):
+            global motion
             hero_x = ((all_entity.hero.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) + 8)
             hero_y = ((all_entity.hero.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) + 4)
             x = (self.rect.x - all_entity.hero.rect.x) / 120
@@ -565,9 +570,12 @@ def working_objects(data_saves=None):
             sell_x = (hero_x + x) * SIZE_SELL
             sell_y = (hero_y + y) * SIZE_SELL + 60
             if sell_x < mouse[0] < sell_x + 120 and sell_y < mouse[1] < sell_y + 120 and self.last_left_click and \
-                    pygame.mouse.get_pressed()[0] == 1 and not all_entity.move:
-                # Проходит удар по врагу
+                    pygame.mouse.get_pressed()[0] == 1 and not all_entity.move and \
+                    abs(x) <= 1 and abs(y) <= 1:
+                print(f"Врагу нанесено {person.personage.dmg} урона.")
+                motion += 1
                 self.hp -= person.personage.dmg
+                print('Ход номер:', motion)
             self.last_left_click = True if pygame.mouse.get_pressed()[0] == 0 else False
             move_x = 0
             move_y = 0
@@ -576,7 +584,6 @@ def working_objects(data_saves=None):
             if random.randint(*self.random_move) != 0 and all_entity.flag and all_entity.move:
                 # Перемещение к игроку
                 if abs(x) <= self.vision and abs(y) <= self.vision:
-                    print(sell_x, sell_y)
                     if x > self.radius_safety:
                         if y > self.radius_safety:
                             move_x = -self.speed
