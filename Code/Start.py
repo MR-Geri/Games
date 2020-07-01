@@ -399,19 +399,20 @@ def working_objects(data_saves=None):
         def update(self):
             display.blit(bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
             camera.update(self.cam)  # центризируем камеру относительно персонажа
+            self.hero.update(pygame.mouse.get_pos())
             self.cam.update(left, right, up, down)  # передвижение камеры
-            self.hero.update(pygame.mouse.get_pos())  # обновление персонажа
             # отрисовка карты
             for y in self.map:
                 for x in y:
                     display.blit(x.image, camera.apply(x))
             #
+            for enemy in self.enemy:
+                if enemy.hp <= 0:
+                    self.enemy.remove(enemy)
+                enemy.update(pygame.mouse.get_pos())
             for move in self.move:
                 display.blit(move.image, camera.apply(move))
                 move.update(pygame.mouse.get_pos())
-            if self.move and self.flag:
-                for enemy in self.enemy:
-                    enemy.update()
             self.flag = True if not self.move else False
             for enemy in self.enemy:
                 display.blit(enemy.image, camera.apply(enemy))
@@ -513,8 +514,8 @@ def working_objects(data_saves=None):
             self.x_vel = 0
             self.y_vel = 0
             # координата персонажа относительные (1920.1080)
-            local_x = (self.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) * SIZE_SELL + 9 * SIZE_SELL
-            local_y = (self.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) * SIZE_SELL + 5 * SIZE_SELL
+            local_x = ((self.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) + 9) * SIZE_SELL
+            local_y = ((self.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) + 5) * SIZE_SELL
             # Нажатие по персонажу ЛКМ
             if not all_entity.invent_is_open:
                 if local_x - SIZE_SELL < mouse[0] < local_x and \
@@ -550,19 +551,32 @@ def working_objects(data_saves=None):
             self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
             self.speed = 120
             self.vision = 3
-            self.radius_safety = 3
+            self.radius_safety = 1
             self.random_move = (0, 5)
+            self.hp = 50
+            self.dmg = 15
+            self.last_left_click = True
 
-        def update(self):
+        def update(self, mouse):
+            hero_x = ((all_entity.hero.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) + 8)
+            hero_y = ((all_entity.hero.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) + 4)
             x = (self.rect.x - all_entity.hero.rect.x) / 120
             y = (self.rect.y - all_entity.hero.rect.y) / 120
+            sell_x = (hero_x + x) * SIZE_SELL
+            sell_y = (hero_y + y) * SIZE_SELL + 60
+            if sell_x < mouse[0] < sell_x + 120 and sell_y < mouse[1] < sell_y + 120 and self.last_left_click and \
+                    pygame.mouse.get_pressed()[0] == 1 and not all_entity.move:
+                # Проходит удар по врагу
+                self.hp -= person.personage.dmg
+            self.last_left_click = True if pygame.mouse.get_pressed()[0] == 0 else False
             move_x = 0
             move_y = 0
             flag = True
             # Если упал шанс на движение
-            if random.randint(*self.random_move) != 0:
+            if random.randint(*self.random_move) != 0 and all_entity.flag and all_entity.move:
                 # Перемещение к игроку
                 if abs(x) <= self.vision and abs(y) <= self.vision:
+                    print(sell_x, sell_y)
                     if x > self.radius_safety:
                         if y > self.radius_safety:
                             move_x = -self.speed
