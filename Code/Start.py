@@ -1,4 +1,4 @@
-from Code.Person import Data_pers
+from Code.Person import Data_pers, Action
 from Code.Graphics import blur
 import Code.items
 import Data.file_data
@@ -26,7 +26,8 @@ OPTION = False
 EXIT = False
 GAME = False
 INVENTORY = False
-FLAG = [NEW_GAME, PRELOAD, PRELOAD_MENU, DELL_GAME, LOAD_GAME, MENU, OPTION, EXIT, GAME, INVENTORY, ESC_MENU]
+GAME_OVER = False
+FLAG = [NEW_GAME, PRELOAD, PRELOAD_MENU, DELL_GAME, LOAD_GAME, MENU, OPTION, EXIT, GAME, INVENTORY, GAME_OVER, ESC_MENU]
 active_person = 0
 # Для сохранения карты
 save_map = []
@@ -206,15 +207,6 @@ class Inventory:
                                            (name, *x, y.index(x), self.start_item.index(y)))
                         break
         # Проверка количества урона у персонажа, если оружие в руках
-        pers.dmg = Code.Person.DMG_START
-        for i in self.invent:
-            try:
-                if i.dmg is not None:
-                    if [i.sell_x, i.sell_y] == [0, 1] or [i.sell_x, i.sell_x] == [1, 1]:
-                        pers.dmg += i.dmg
-            except:
-                pass
-        #
 
     def print_stats(self):
         pygame.draw.rect(display, (212, 92, 0), (888, 255, 35, 160))
@@ -225,18 +217,6 @@ class Inventory:
 
     def update_invent(self):
         pers = person.personage
-        # Апдейт инвентаря
-        self.start_item = [[pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3]],
-                           [pers.left_arm, pers.right_arm, pers.belt, pers.back],
-                           [pers.head, pers.body, pers.legs, pers.feet]]
-        self.invent = []
-        for y in self.start_item:
-            for x in y:
-                for i in Data.file_data.ITEMS:
-                    if x in i:
-                        name = Data.file_data.ITEMS_Name[Data.file_data.ITEMS.index(i)]
-                        self.invent.append(Code.items.item_add(name, *x, y.index(x), self.start_item.index(y)))
-                        break
         # Проверка количества урона у персонажа, если оружие в руках
         pers.dmg = Code.Person.DMG_START
         for i in self.invent:
@@ -300,7 +280,11 @@ class Inventory:
                                 self.last_right_click = 0
                                 i.use(person.personage)
                                 # Обновление статистики персонажа и обновление инвентаря
-                                inventory.open()
+                                for item_del in self.invent:
+                                    if item_del.sell_x == i.sell_x and item_del.sell_y == i.sell_y:
+                                        print(self.invent.index(item_del))
+                                        del self.invent[self.invent.index(item_del)]
+                                        inventory.open()
                                 print('Предмет использован')
                                 break
                             elif pygame.mouse.get_pressed()[0] == 1:
@@ -335,11 +319,10 @@ class Inventory:
             print_text('ноги', 625, 760, font_size=30)
             print_text('ступни', 730, 760, font_size=30)
 
-        global key_e, back
+        global key_e
         global left, right, up, down
 
         left = right = up = down = False
-        back = inventory.open
         flag_all_false()
         FLAG[INVENTORY] = True
         pygame.draw.rect(display, (255, 255, 255), (340, 220, 1240, 640))
@@ -398,31 +381,64 @@ def working_objects(data_saves=None):
             self.flag = False
 
         def update(self):
-            display.blit(bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
-            camera.update(self.cam)  # центризируем камеру относительно персонажа
-            self.hero.update(pygame.mouse.get_pos())
-            self.cam.update(left, right, up, down)  # передвижение камеры
-            # отрисовка карты
-            for y in self.map:
-                for x in y:
-                    display.blit(x.image, camera.apply(x))
-            #
-            for enemy in self.enemy:
-                if enemy.hp <= 0:
-                    self.enemy.remove(enemy)
-                    print('Противник погиб.')
-                enemy.update(pygame.mouse.get_pos())
-            for move in self.move:
+            if not Code.Person.Action(person.personage).is_live():
+                print('Game Over')
+                ok_button = Button(w=480, h=50, x=210, y=14)
+                flag_all_false()
+                FLAG[GAME_OVER] = True
+                while FLAG[GAME_OVER]:
+                    is_active_display()
+                    pygame.draw.rect(display, (255, 255, 0), (700, 495, 520, 110))
+                    print_text(message='GAME OVER!', x=865, y=510, font_size=30)
+                    ok_button.draw(720, 545, 'Ок', menu)
+                    for i in pygame.event.get():
+                        if i.type == pygame.QUIT:
+                            pygame.quit()
+                            quit()
+                        if i.type == pygame.KEYDOWN and (i.key == pygame.K_ESCAPE or i.key == pygame.K_RETURN):
+                            menu()
+                    pygame.display.update()
+            else:
+                display.blit(bg, (0, 0))  # Каждую итерацию необходимо всё перерисовывать
+                camera.update(self.cam)  # центризируем камеру относительно персонажа
+                self.hero.update(pygame.mouse.get_pos())
+                self.cam.update(left, right, up, down)  # передвижение камеры
+                # отрисовка карты
+                for y in self.map:
+                    for x in y:
+                        display.blit(x.image, camera.apply(x))
+                #
                 for enemy in self.enemy:
-                    if enemy.rect.x == move.rect.x and enemy.rect.y == move.rect.y:
-                        self.move.remove(move)
-                display.blit(move.image, camera.apply(move))
-                move.update(pygame.mouse.get_pos())
-            self.flag = True if not self.move else False
-            for enemy in self.enemy:
-                display.blit(enemy.image, camera.apply(enemy))
-            display.blit(self.hero.image, camera.apply(self.hero))  # отрисовка персонажа
-            pygame.display.update()
+                    if enemy.hp <= 0:
+                        self.enemy.remove(enemy)
+                        item = random.choice(*enemy.drop_item)
+                        for i in Data.file_data.ITEMS:
+                            if item in i:
+                                name = Data.file_data.ITEMS_Name[Data.file_data.ITEMS.index(i)]
+                                pockets = [[0, 0], [1, 0], [2, 0], [3, 0]]
+                                for i in inventory.invent:
+                                    for j in pockets:
+                                        if [int(i.sell_x), int(i.sell_y)] == j:
+                                            pockets.remove(j)
+                                if pockets:
+                                    t = [[0, 0], [1, 0], [2, 0], [3, 0]]
+                                    temp = t.index(*pockets)
+                                    person.personage.pockets[temp] = item
+                                    inventory.invent.append(Code.items.item_add(name, *item, *pockets[0]))
+                                    print('Лут из противника добавлен в карманы.')
+                        print('Противник погиб.')
+                    enemy.update(pygame.mouse.get_pos())
+                for move in self.move:
+                    for enemy in self.enemy:
+                        if enemy.rect.x == move.rect.x and enemy.rect.y == move.rect.y:
+                            self.move.remove(move)
+                    display.blit(move.image, camera.apply(move))
+                    move.update(pygame.mouse.get_pos())
+                self.flag = True if not self.move else False
+                for enemy in self.enemy:
+                    display.blit(enemy.image, camera.apply(enemy))
+                display.blit(self.hero.image, camera.apply(self.hero))  # отрисовка персонажа
+                pygame.display.update()
 
     class Move(pygame.sprite.Sprite):
         def __init__(self, x, y):
@@ -432,7 +448,6 @@ def working_objects(data_saves=None):
             self.last_left_click = 0
 
         def update(self, mouse):
-            global motion
             if not all_entity.invent_is_open:
                 # Перемещение персонажа на ячейку с точкой.
                 local_x = (self.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) * SIZE_SELL + 9 * SIZE_SELL
@@ -444,13 +459,11 @@ def working_objects(data_saves=None):
                     x = abs((self.rect.x - all_entity.hero.rect.x) // 120)
                     y = abs((self.rect.y - all_entity.hero.rect.y) // 120)
                     cell = x + y if x == 0 or y == 0 else (x + y) / 2
-                    person.personage.hunger -= math.ceil(cell)
+                    Code.Person.Action(person.personage).left_hunger(math.ceil(cell))
                     # ---------------
                     all_entity.hero.rect.x = self.rect.x
                     all_entity.hero.rect.y = self.rect.y
                     all_entity.move = []
-                    motion += 1
-                    print('Ход номер:', motion)
                 self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
 
     class Map(pygame.sprite.Sprite):
@@ -518,7 +531,7 @@ def working_objects(data_saves=None):
             self.last_left_click, self.last_right_click = 0, 0
 
         def update(self, mouse):
-            global key_e
+            global key_e, motion
             self.x_vel = 0
             self.y_vel = 0
             # координата персонажа относительные (1920.1080)
@@ -539,6 +552,8 @@ def working_objects(data_saves=None):
                                     position_x = self.rect.x + x * 120
                                     position_y = self.rect.y + y * 120
                                     cell_move.append(Move(position_x, position_y))
+                        motion += 1
+                        print('Ход номер:', motion)
                         all_entity.move = cell_move
                     else:
                         all_entity.move = []
@@ -559,6 +574,8 @@ def working_objects(data_saves=None):
             self.random_move = (0, 5)
             self.hp = 50
             self.dmg = 15
+            self.drop_item_chance = (0, 6)
+            self.drop_item = [Data.file_data.CANNED]
             self.last_left_click = True
 
         def update(self, mouse):
@@ -675,7 +692,7 @@ def save_game():
     global person, save_map, flag_esc_menu
     if flag_esc_menu:
         # Карта. Персонажи. Положение картинки игрока. Положение камеры.
-        data_t = [[] for _ in range(5)]
+        data_t = [[] for _ in range(6)]
         data_t[0] = save_map
         data_t[1] = [person.personage.name, person.personage.surname, person.personage.age, person.personage.dmg,
                      list(person.personage.special), list(person.personage.skills), list(person.personage.buff),
@@ -693,6 +710,7 @@ def save_game():
             else:
                 enemy[i.rect.y].append(i.rect.x)
         data_t[4] = enemy
+        data_t[5] = motion
         # сохранение или замена
         try:
             data = json.load(open('../Save_Loading/save.json'))
@@ -720,7 +738,7 @@ def save_game():
 def load_game():
     def load(n):
         def helper_load():
-            global person
+            global person, motion, inventory
             per = DATA_SAVE[n][1]
             person = Data_pers()
             person.personage.name, person.personage.surname = per[0], per[1]
@@ -744,6 +762,10 @@ def load_game():
             person.personage.belt = per[20]
             person.personage.pockets = per[21]
             print(person)
+            motion = int(DATA_SAVE[n][5])
+            inventory = Inventory()
+            inventory.update_invent()
+            # Нужно загрузить инвентарь....
             working_objects([DATA_SAVE[n][0], DATA_SAVE[n][2], DATA_SAVE[n][3], DATA_SAVE[n][4]])
             print(f'Игра загружена.')
             game()
@@ -931,7 +953,6 @@ def game():
     global left, right, up, down, key_e, left_click
     global camera, all_entity, display, back
     global inventory
-    inventory = Inventory()
     back = game
     display.blit(back_menu, (0, 0))
     flag_all_false()
@@ -974,10 +995,11 @@ class Presets:
         self.preset = ['Вы - одиночка, с запасом самого необходимого, для выживания.']
 
     def one(self):
-        global person
+        global person, inventory
         if person is None:
             person = Data_pers()
             print(person)
+            inventory = Inventory()
             working_objects()
             save_game()
             game()
@@ -990,6 +1012,8 @@ class Presets:
 
 def menu():
     def new_game():
+        global motion
+        motion = 0
         display.blit(pygame.image.frombuffer(blur(), PERMISSION, "RGB"), (0, 0))
         preset_button = Button(w=480, h=50, x=75, y=14)
         back_button = Button(w=110, h=50, y=14)

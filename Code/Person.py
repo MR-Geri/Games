@@ -38,7 +38,6 @@ class Action:
     def is_live(self):
         if self.pers.hp > 0:
             return True
-        print('Персонаж мёртв.')
         return False
 
     def eat(self, hunger):
@@ -61,7 +60,7 @@ class Action:
             return False
         self.pers.hunger -= hunger
         if self.pers.hunger < 0:
-            self.pers.damage(abs(self.pers.hunger))
+            Action(self.pers).damage(abs(self.pers.hunger * 20))
             if Action.is_live(self) is False:
                 print(f'Персонаж погиб из-за голода.')
             self.pers.hunger = 0
