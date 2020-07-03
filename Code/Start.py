@@ -574,7 +574,7 @@ def working_objects(data_saves=None):
             self.radius_safety = 1
             self.random_move = (0, 5)
             self.hp = 50
-            self.dmg = 15
+            self.dmg = 45
             self.drop_item_chance = (0, 3)
             self.drop_item = [Data.file_data.CANNED]
             self.last_left_click = True
@@ -597,7 +597,6 @@ def working_objects(data_saves=None):
             self.last_left_click = True if pygame.mouse.get_pressed()[0] == 0 else False
             move_x = 0
             move_y = 0
-            flag = True
             # Если упал шанс на движение
             if random.randint(*self.random_move) != 0 and all_entity.flag and all_entity.move:
                 # Перемещение к игроку
@@ -625,13 +624,10 @@ def working_objects(data_saves=None):
                             move_y = -self.speed
                         elif y < -self.radius_safety:
                             move_y = self.speed
-                    move_x += self.rect.x
-                    move_y += self.rect.y
                     for enemy in all_entity.enemy:
-                        flag = False if enemy.rect.x == move_x and enemy.rect.y == move_y else flag
-                    if flag:
-                        self.rect.x = move_x
-                        self.rect.y = move_y
+                        if enemy.rect.x != move_x + self.rect.x and enemy.rect.y != move_y + self.rect.y:
+                            self.rect.x += move_x
+                            self.rect.y += move_y
                 # перемещение по карте
                 else:
                     self.rect.x += random.randint(-2, 2) * SIZE_SELL
