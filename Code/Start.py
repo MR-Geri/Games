@@ -208,13 +208,6 @@ class Inventory:
                         break
         # Проверка количества урона у персонажа, если оружие в руках
 
-    def print_stats(self):
-        pygame.draw.rect(display, (212, 92, 0), (888, 255, 35, 160))
-        print_text(str(person.personage.hunger), 890, 265, font_size=20)
-        print_text(str(person.personage.water), 890, 305, font_size=20)
-        print_text(str(person.personage.hp), 890, 345, font_size=20)
-        print_text(str(person.personage.dmg), 890, 385, font_size=20)
-
     def update_invent(self):
         pers = person.personage
         # Проверка количества урона у персонажа, если оружие в руках
@@ -317,7 +310,6 @@ class Inventory:
             print_text('тело', 505, 760, font_size=30)
             print_text('ноги', 625, 760, font_size=30)
             print_text('ступни', 730, 760, font_size=30)
-
         global key_e
         global left, right, up, down
 
@@ -326,20 +318,10 @@ class Inventory:
         FLAG[INVENTORY] = True
         pygame.draw.rect(display, (255, 255, 255), (340, 220, 1240, 640))
         pygame.draw.rect(display, (212, 92, 0), (350, 230, 1220, 620))  # Это фон инвентаря
-
         display.blit(pygame.transform.scale(
             pygame.image.load("../Data/drawing/player_front.png"), (240, 240)), (360, 240))
         display.blit(pygame.transform.scale(
             pygame.image.load("../Data/drawing/player_back.png"), (240, 240)), (600, 240))
-        display.blit(
-            pygame.transform.scale(pygame.image.load('../Data/drawing/eat.png'), (30, 30)), (850, 255))
-        display.blit(
-            pygame.transform.scale(pygame.image.load('../Data/drawing/water.png'), (30, 30)), (850, 295))
-        display.blit(
-            pygame.transform.scale(pygame.image.load('../Data/drawing/hp.png'), (30, 30)), (850, 335))
-        display.blit(
-            pygame.transform.scale(pygame.image.load('../Data/drawing/sword.png'), (30, 30)), (850, 375))
-        inventory.print_stats()
         pygame.display.update()
         while FLAG[INVENTORY]:
             is_active_display()
@@ -359,7 +341,7 @@ class Inventory:
                     display.blit(pygame.image.load('../Data/items/item_sell.jpg'), (360 + 120 * x, 720 - 120 * y))
             # отрисовка текста
             inventory.update_invent()
-            inventory.print_stats()
+            all_entity.print_stats()
             item_print()
             for item in self.invent:
                 display.blit(pygame.image.load('../Data/items/item_sell.jpg'),
@@ -378,6 +360,21 @@ def working_objects(data_saves=None):
             self.enemy = enemy
             self.invent_is_open = False
             self.flag = False
+            self.eat = pygame.transform.scale(pygame.image.load('../Data/drawing/eat.png'), (30, 30))
+            self.water = pygame.transform.scale(pygame.image.load('../Data/drawing/water.png'), (30, 30))
+            self.hp = pygame.transform.scale(pygame.image.load('../Data/drawing/hp.png'), (30, 30))
+            self.sword = pygame.transform.scale(pygame.image.load('../Data/drawing/sword.png'), (30, 30))
+
+        def print_stats(self):
+            pygame.draw.rect(display, (212, 92, 0), (0, 915, 80, 160))
+            display.blit(self.eat, (5, 920))
+            display.blit(self.water, (5, 960))
+            display.blit(self.hp, (5, 1000))
+            display.blit(self.sword, (5, 1040))
+            print_text(str(person.personage.hunger), 40, 930, font_size=20)
+            print_text(str(person.personage.water), 40, 970, font_size=20)
+            print_text(str(person.personage.hp), 40, 1010, font_size=20)
+            print_text(str(person.personage.dmg), 40, 1050, font_size=20)
 
         def update(self):
             if not Code.Person.Action(person.personage).is_live():
@@ -405,7 +402,10 @@ def working_objects(data_saves=None):
                 # отрисовка карты
                 for y in self.map:
                     for x in y:
-                        display.blit(x.image, camera.apply(x))
+                        if abs(x.rect.x - self.cam.rect.x) < 1400 and abs(x.rect.y - self.cam.rect.y) < 900:
+                            display.blit(x.image, camera.apply(x))
+                # Вывод статистики левый нижний угол
+                all_entity.print_stats()
                 #
                 for enemy in self.enemy:
                     if enemy.hp <= 0:
@@ -436,7 +436,8 @@ def working_objects(data_saves=None):
                     move.update(pygame.mouse.get_pos())
                 self.flag = True if not self.move else False
                 for enemy in self.enemy:
-                    display.blit(enemy.image, camera.apply(enemy))
+                    if abs(enemy.rect.x - self.cam.rect.x) < 1400 and abs(enemy.rect.y - self.cam.rect.y) < 900:
+                        display.blit(enemy.image, camera.apply(enemy))
                 display.blit(self.hero.image, camera.apply(self.hero))  # отрисовка персонажа
                 pygame.display.update()
 
