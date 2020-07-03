@@ -424,8 +424,8 @@ def working_objects(data_saves=None):
                                         t = [[0, 0], [1, 0], [2, 0], [3, 0]]
                                         temp = t.index(*pockets)
                                         person.personage.pockets[temp] = item
+                                        print(item, 'кинь в карманы.')
                                         inventory.invent.append(Code.items.item_add(name, *item, *pockets[0]))
-                                        print('Лут из противника добавлен в карманы.')
                         print('Противник погиб.')
                     enemy.update(pygame.mouse.get_pos())
                 for move in self.move:
@@ -574,7 +574,7 @@ def working_objects(data_saves=None):
             self.random_move = (0, 5)
             self.hp = 50
             self.dmg = 15
-            self.drop_item_chance = (0, 6)
+            self.drop_item_chance = (0, 3)
             self.drop_item = [Data.file_data.CANNED]
             self.last_left_click = True
 
