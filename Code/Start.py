@@ -282,7 +282,6 @@ class Inventory:
                                 # Обновление статистики персонажа и обновление инвентаря
                                 for item_del in self.invent:
                                     if item_del.sell_x == i.sell_x and item_del.sell_y == i.sell_y:
-                                        print(self.invent.index(item_del))
                                         del self.invent[self.invent.index(item_del)]
                                         inventory.open()
                                 print('Предмет использован')
@@ -411,21 +410,22 @@ def working_objects(data_saves=None):
                 for enemy in self.enemy:
                     if enemy.hp <= 0:
                         self.enemy.remove(enemy)
-                        item = random.choice(*enemy.drop_item)
-                        for i in Data.file_data.ITEMS:
-                            if item in i:
-                                name = Data.file_data.ITEMS_Name[Data.file_data.ITEMS.index(i)]
-                                pockets = [[0, 0], [1, 0], [2, 0], [3, 0]]
-                                for i in inventory.invent:
-                                    for j in pockets:
-                                        if [int(i.sell_x), int(i.sell_y)] == j:
-                                            pockets.remove(j)
-                                if pockets:
-                                    t = [[0, 0], [1, 0], [2, 0], [3, 0]]
-                                    temp = t.index(*pockets)
-                                    person.personage.pockets[temp] = item
-                                    inventory.invent.append(Code.items.item_add(name, *item, *pockets[0]))
-                                    print('Лут из противника добавлен в карманы.')
+                        if random.randint(*enemy.drop_item_chance) == 1:
+                            item = random.choice(*enemy.drop_item)
+                            for i in Data.file_data.ITEMS:
+                                if item in i:
+                                    name = Data.file_data.ITEMS_Name[Data.file_data.ITEMS.index(i)]
+                                    pockets = [[0, 0], [1, 0], [2, 0], [3, 0]]
+                                    for i in inventory.invent:
+                                        for j in pockets:
+                                            if [int(i.sell_x), int(i.sell_y)] == j:
+                                                pockets.remove(j)
+                                    if pockets:
+                                        t = [[0, 0], [1, 0], [2, 0], [3, 0]]
+                                        temp = t.index(*pockets)
+                                        person.personage.pockets[temp] = item
+                                        inventory.invent.append(Code.items.item_add(name, *item, *pockets[0]))
+                                        print('Лут из противника добавлен в карманы.')
                         print('Противник погиб.')
                     enemy.update(pygame.mouse.get_pos())
                 for move in self.move:
@@ -459,7 +459,7 @@ def working_objects(data_saves=None):
                     x = abs((self.rect.x - all_entity.hero.rect.x) // 120)
                     y = abs((self.rect.y - all_entity.hero.rect.y) // 120)
                     cell = x + y if x == 0 or y == 0 else (x + y) / 2
-                    Code.Person.Action(person.personage).left_hunger(math.ceil(cell))
+                    Action(person.personage).left_hunger(math.ceil(cell))
                     # ---------------
                     all_entity.hero.rect.x = self.rect.x
                     all_entity.hero.rect.y = self.rect.y
