@@ -50,6 +50,8 @@ data_sell_image = [pygame.image.load(f'../Data/data_sell/cell.jpg'),
                    pygame.image.load(f'../Data/data_sell/cell_2.jpg'),
                    pygame.image.load(f'../Data/data_sell/cell_3.jpg'),
                    pygame.image.load(f'../Data/data_sell/cell_4.jpg')]
+enemy_various = [[pygame.image.load("../Data/drawing/slime.png"), 120, 4, 1, (0, 5), 50, 45, (0, 3),
+                  [Data.file_data.CANNED]]]
 # Кнопки
 button_left_click = False
 left_click = False
@@ -564,19 +566,19 @@ def working_objects(data_saves=None):
             all_entity.invent_is_open = True if key_e == 2 else False
 
     class Enemy(pygame.sprite.Sprite):
-        def __init__(self, x, y):
+        def __init__(self, x, y, image, speed, vision, radius_safety, random_move, hp, dmg, drop_item_chance,
+                     drop_item):
             pygame.sprite.Sprite.__init__(self)
-            self.image = pygame.image.load("../Data/drawing/slime.png")
-            self.image = pygame.transform.scale(self.image, (SIZE_SELL - 8, SIZE_SELL - 8))
+            self.image = pygame.transform.scale(image, (SIZE_SELL - 8, SIZE_SELL - 8))
             self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
-            self.speed = 120
-            self.vision = 3
-            self.radius_safety = 1
-            self.random_move = (0, 5)
-            self.hp = 50
-            self.dmg = 45
-            self.drop_item_chance = (0, 3)
-            self.drop_item = [Data.file_data.CANNED]
+            self.speed = speed
+            self.vision = vision
+            self.radius_safety = radius_safety
+            self.random_move = random_move
+            self.hp = hp
+            self.dmg = dmg
+            self.drop_item_chance = drop_item_chance
+            self.drop_item = drop_item
             self.last_left_click = True
 
         def update(self, mouse):
@@ -595,6 +597,7 @@ def working_objects(data_saves=None):
                 self.hp -= person.personage.dmg
                 print('Ход номер:', motion)
             self.last_left_click = True if pygame.mouse.get_pressed()[0] == 0 else False
+            flag = True
             move_x = 0
             move_y = 0
             # Если упал шанс на движение
@@ -624,14 +627,17 @@ def working_objects(data_saves=None):
                             move_y = -self.speed
                         elif y < -self.radius_safety:
                             move_y = self.speed
+                    move_x += self.rect.x
+                    move_y += self.rect.y
                     for enemy in all_entity.enemy:
-                        if enemy.rect.x != move_x + self.rect.x and enemy.rect.y != move_y + self.rect.y:
-                            self.rect.x += move_x
-                            self.rect.y += move_y
+                        flag = False if enemy.rect.x == move_x and enemy.rect.y == move_y else flag
+                    if flag:
+                        self.rect.x = move_x
+                        self.rect.y = move_y
                 # перемещение по карте
                 else:
-                    self.rect.x += random.randint(-2, 2) * SIZE_SELL
-                    self.rect.y += random.randint(-2, 2) * SIZE_SELL
+                    self.rect.x += random.randint(-3, 3) * SIZE_SELL
+                    self.rect.y += random.randint(-3, 3) * SIZE_SELL
 
     global save_map, camera, all_entity
     # Загрузочный экран
@@ -652,9 +658,10 @@ def working_objects(data_saves=None):
             for x in range(QUANTITY_SELL[0]):
                 map_x.append(Map(x * SIZE_SELL, y * SIZE_SELL, data_sell[int(save_map[y][x])]))
             map_y.append(map_x)
+        # загрузка противников на карту (Слизнь)
         for j in data_saves[3]:
             for i in data_saves[3].get(j):
-                enemy_list.append(Enemy(int(i), int(j)))
+                enemy_list.append(Enemy(int(i), int(j), *enemy_various[0]))
         all_entity = Updating(map_y,
                               Hero(*data_saves[1]),
                               Cums(*data_saves[2]),
@@ -668,8 +675,9 @@ def working_objects(data_saves=None):
             save_map_x = ''
             map_x = []
             for x in range(QUANTITY_SELL[0]):
+                # добавление разных противников на карту (Слизнь)
                 if (random.randint(0, 50) == 1) and ((y < 50 or y > 52) and (x < 49 or x > 53)):
-                    enemy_list.append(Enemy(x * SIZE_SELL, y * SIZE_SELL))
+                    enemy_list.append(Enemy(x * SIZE_SELL, y * SIZE_SELL, *enemy_various[0]))
                 if y == 51 and (x == 50 or x == 51):
                     graphic_cell = data_sell[0]
                 else:
@@ -700,12 +708,13 @@ def save_game():
                      person.personage.belt, person.personage.pockets]
         data_t[2] = [all_entity.hero.rect.x, all_entity.hero.rect.y]
         data_t[3] = [all_entity.cam.rect.x, all_entity.cam.rect.y]
-        enemy = {}
-        for i in all_entity.enemy:
-            if enemy.get(i.rect.y) is None:
-                enemy.update({i.rect.y: [i.rect.x]})
-            else:
-                enemy[i.rect.y].append(i.rect.x)
+        enemy = {'slime': {}}
+        for num in enemy:
+            for i in all_entity.enemy:
+                if enemy.get(i.rect.y) is None:
+                    enemy[num].update({i.rect.y: [i.rect.x]})
+                else:
+                    enemy[num][i.rect.y].append(i.rect.x)
         data_t[4] = enemy
         data_t[5] = motion
         # сохранение или замена
