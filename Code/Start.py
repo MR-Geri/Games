@@ -50,6 +50,7 @@ data_sell_image = [pygame.image.load(f'../Data/data_sell/cell.jpg'),
                    pygame.image.load(f'../Data/data_sell/cell_2.jpg'),
                    pygame.image.load(f'../Data/data_sell/cell_3.jpg'),
                    pygame.image.load(f'../Data/data_sell/cell_4.jpg')]
+# image, speed, vision, radius_safety, random_move, hp, dmg, drop_item_chance, drop_item
 enemy_various = [[pygame.image.load("../Data/drawing/slime.png"), 120, 4, 1, (0, 5), 50, 45, (0, 3),
                   [Data.file_data.CANNED]]]
 # Кнопки
@@ -354,12 +355,13 @@ class Inventory:
 
 def working_objects(data_saves=None):
     class Updating:
-        def __init__(self, map, hero, cam, enemy):
+        def __init__(self, map, hero, cam, enemy, chest):
             self.map = map
             self.move = []
             self.cam = cam
             self.hero = hero
             self.enemy = [*enemy]
+            self.chest = chest
             self.invent_is_open = False
             self.flag = False
             self.eat = pygame.transform.scale(pygame.image.load('../Data/drawing/eat.png'), (30, 30))
@@ -409,6 +411,9 @@ def working_objects(data_saves=None):
                 # Вывод статистики левый нижний угол
                 all_entity.print_stats()
                 #
+                for chest in self.chest:
+                    display.blit(chest.image, camera.apply(chest))
+                    chest.update(pygame.mouse.get_pos())
                 for en in self.enemy:
                     for enemy in en:
                         if enemy.hp <= 0:
@@ -431,11 +436,17 @@ def working_objects(data_saves=None):
                                             inventory.invent.append(Code.items.item_add(name, *item, *pockets[0]))
                             print('Противник погиб.')
                         enemy.update(pygame.mouse.get_pos())
+                # Удаление точки если там кто-то есть
                 for move in self.move:
                     for en in self.enemy:
                         for enemy in en:
                             if enemy.rect.x == move.rect.x and enemy.rect.y == move.rect.y:
                                 self.move.remove(move)
+                    for ch in self.chest:
+                        if ch.rect.x == move.rect.x and ch.rect.y == move.rect.y:
+                            self.move.remove(move)
+                # отрисовка точек
+                for move in self.move:
                     display.blit(move.image, camera.apply(move))
                     move.update(pygame.mouse.get_pos())
                 self.flag = True if not self.move else False
@@ -588,8 +599,8 @@ def working_objects(data_saves=None):
             global motion
             hero_x = ((all_entity.hero.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) + 8)
             hero_y = ((all_entity.hero.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) + 4)
-            x = (self.rect.x - all_entity.hero.rect.x) / 120
-            y = (self.rect.y - all_entity.hero.rect.y) / 120
+            x = (self.rect.x - all_entity.hero.rect.x) / SIZE_SELL
+            y = (self.rect.y - all_entity.hero.rect.y) / SIZE_SELL
             sell_x = (hero_x + x) * SIZE_SELL
             sell_y = (hero_y + y) * SIZE_SELL + 60
             if sell_x < mouse[0] < sell_x + 120 and sell_y < mouse[1] < sell_y + 120 and self.last_left_click and \
@@ -604,7 +615,7 @@ def working_objects(data_saves=None):
             move_x = 0
             move_y = 0
             # Если упал шанс на движение
-            if random.randint(*self.random_move) != 0 and all_entity.flag and all_entity.move:
+            if random.randint(*self.random_move) != 1 and all_entity.flag and all_entity.move:
                 # Перемещение к игроку
                 if abs(x) <= self.vision and abs(y) <= self.vision:
                     if x > self.radius_safety:
@@ -643,6 +654,35 @@ def working_objects(data_saves=None):
                     self.rect.x += random.randint(-3, 3) * SIZE_SELL
                     self.rect.y += random.randint(-3, 3) * SIZE_SELL
 
+    class Chest(pygame.sprite.Sprite):
+        def __init__(self, x, y):
+            pygame.sprite.Sprite.__init__(self)
+            self.condition = True
+            self.image = pygame.transform.scale(pygame.image.load('../Data/items/chest_close.png'),
+                                                (SIZE_SELL, SIZE_SELL))
+            self.loot = []
+            self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
+            self.last_left_click = False
+
+        def update(self, mouse):
+            global motion
+            if self.condition:
+                hero_x = ((all_entity.hero.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) + 8)
+                hero_y = ((all_entity.hero.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) + 4)
+                x = (self.rect.x - all_entity.hero.rect.x) / SIZE_SELL
+                y = (self.rect.y - all_entity.hero.rect.y) / SIZE_SELL
+                sell_x = (hero_x + x) * SIZE_SELL
+                sell_y = (hero_y + y) * SIZE_SELL + 60
+                if sell_x < mouse[0] < sell_x + 120 and sell_y < mouse[1] < sell_y + 120 and self.last_left_click and \
+                        pygame.mouse.get_pressed()[0] == 1 and not all_entity.move:
+                    self.condition = False
+                    self.image = pygame.transform.scale(pygame.image.load('../Data/items/chest_open.png'),
+                                                        (SIZE_SELL, SIZE_SELL))
+                    print(f"Сундук открыт")
+                    motion += 1
+                    print('Ход номер:', motion)
+                self.last_left_click = True if pygame.mouse.get_pressed()[0] == 0 else False
+
     global save_map, camera, all_entity
     # Загрузочный экран
     display.blit(back_menu, (0, 0))
@@ -669,16 +709,22 @@ def working_objects(data_saves=None):
                 for i in num.get(j):
                     enemy_class.append(Enemy(int(i), int(j), *enemy_various[data_saves[3].index(num)]))
             enemy_list.append(enemy_class)
+        chest = []
+        for y in data_saves[4]:
+            for x in data_saves[4].get(y):
+                chest.append(Chest(int(x), int(y)))
         all_entity = Updating(map_y,
                               Hero(*data_saves[1]),
                               Cums(*data_saves[2]),
-                              enemy_list)
+                              enemy_list,
+                              chest)
     elif data_saves is None:
         # Создание и сохранение карты
         save_map = []
         map_y = []
         # (Слизнь, )
         enemy_list = [[] for _ in range(len(enemy_various))]
+        chest = []
         for y in range(QUANTITY_SELL[1]):
             save_map_x = ''
             map_x = []
@@ -687,6 +733,8 @@ def working_objects(data_saves=None):
                 for num in range(len(enemy_various)):
                     if (random.randint(0, 50) == 1) and ((y < 50 or y > 52) and (x < 49 or x > 53)):
                         enemy_list[num].append(Enemy(x * SIZE_SELL, y * SIZE_SELL, *enemy_various[num]))
+                    elif (random.randint(0, 10) == 1) and ((y < 50 or y > 52) and (x < 49 or x > 53)):
+                        chest.append(Chest(x * SIZE_SELL, y * SIZE_SELL))
                 if y == 51 and (x == 50 or x == 51):
                     graphic_cell = data_sell[0]
                 else:
@@ -698,7 +746,8 @@ def working_objects(data_saves=None):
         all_entity = Updating(map_y,
                               Hero(51 * SIZE_SELL, 51 * SIZE_SELL),
                               Cums(51 * SIZE_SELL, 51 * SIZE_SELL + SIZE_SELL // 2),
-                              enemy_list)
+                              enemy_list,
+                              chest)
     camera = Camera(camera_configure, total_width, total_height)
 
 
@@ -706,7 +755,7 @@ def save_game():
     global person, save_map, flag_esc_menu
     if flag_esc_menu:
         # Карта. Персонажи. Положение картинки игрока. Положение камеры.
-        data_t = [[] for _ in range(6)]
+        data_t = [[] for _ in range(7)]
         data_t[0] = save_map
         data_t[1] = [person.personage.name, person.personage.surname, person.personage.age, person.personage.dmg,
                      list(person.personage.special), list(person.personage.skills), list(person.personage.buff),
@@ -725,8 +774,15 @@ def save_game():
                     enemy[all_entity.enemy.index(i)].update({en.rect.y: [en.rect.x]})
                 else:
                     enemy[all_entity.enemy.index(i)][en.rect.y].append(en.rect.x)
+        chest = {}
+        for i in all_entity.chest:
+            if chest.get(i.rect.y) is None:
+                chest.update({i.rect.y: [i.rect.x]})
+            else:
+                chest[i.rect.y].append(i.rect.x)
         data_t[4] = enemy
-        data_t[5] = motion
+        data_t[5] = chest
+        data_t[6] = motion
         # сохранение или замена
         try:
             data = json.load(open('../Save_Loading/save.json'))
@@ -778,11 +834,11 @@ def load_game():
             person.personage.belt = per[20]
             person.personage.pockets = per[21]
             print(person)
-            motion = int(DATA_SAVE[n][5])
+            motion = int(DATA_SAVE[n][6])
             inventory = Inventory()
             inventory.update_invent()
             # Нужно загрузить инвентарь....
-            working_objects([DATA_SAVE[n][0], DATA_SAVE[n][2], DATA_SAVE[n][3], DATA_SAVE[n][4]])
+            working_objects([DATA_SAVE[n][0], DATA_SAVE[n][2], DATA_SAVE[n][3], DATA_SAVE[n][4], DATA_SAVE[n][5]])
             print(f'Игра загружена.')
             game()
 
