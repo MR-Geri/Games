@@ -359,7 +359,7 @@ def working_objects(data_saves=None):
             self.move = []
             self.cam = cam
             self.hero = hero
-            self.enemy = enemy
+            self.enemy = [*enemy]
             self.invent_is_open = False
             self.flag = False
             self.eat = pygame.transform.scale(pygame.image.load('../Data/drawing/eat.png'), (30, 30))
@@ -409,37 +409,40 @@ def working_objects(data_saves=None):
                 # Вывод статистики левый нижний угол
                 all_entity.print_stats()
                 #
-                for enemy in self.enemy:
-                    if enemy.hp <= 0:
-                        self.enemy.remove(enemy)
-                        if random.randint(*enemy.drop_item_chance) == 1:
-                            item = random.choice(*enemy.drop_item)
-                            for i in Data.file_data.ITEMS:
-                                if item in i:
-                                    name = Data.file_data.ITEMS_Name[Data.file_data.ITEMS.index(i)]
-                                    pockets = [[0, 0], [1, 0], [2, 0], [3, 0]]
-                                    for i in inventory.invent:
-                                        for j in pockets:
-                                            if [int(i.sell_x), int(i.sell_y)] == j:
-                                                pockets.remove(j)
-                                    if pockets:
-                                        t = [[0, 0], [1, 0], [2, 0], [3, 0]]
-                                        temp = t.index(*pockets)
-                                        person.personage.pockets[temp] = item
-                                        print(item, 'кинь в карманы.')
-                                        inventory.invent.append(Code.items.item_add(name, *item, *pockets[0]))
-                        print('Противник погиб.')
-                    enemy.update(pygame.mouse.get_pos())
+                for en in self.enemy:
+                    for enemy in en:
+                        if enemy.hp <= 0:
+                            en.remove(enemy)
+                            if random.randint(*enemy.drop_item_chance) == 1:
+                                item = random.choice(*enemy.drop_item)
+                                for i in Data.file_data.ITEMS:
+                                    if item in i:
+                                        name = Data.file_data.ITEMS_Name[Data.file_data.ITEMS.index(i)]
+                                        pockets = [[0, 0], [1, 0], [2, 0], [3, 0]]
+                                        for i in inventory.invent:
+                                            for j in pockets:
+                                                if [int(i.sell_x), int(i.sell_y)] == j:
+                                                    pockets.remove(j)
+                                        if pockets:
+                                            t = [[0, 0], [1, 0], [2, 0], [3, 0]]
+                                            temp = t.index(*pockets)
+                                            person.personage.pockets[temp] = item
+                                            print(item, 'кинь в карманы.')
+                                            inventory.invent.append(Code.items.item_add(name, *item, *pockets[0]))
+                            print('Противник погиб.')
+                        enemy.update(pygame.mouse.get_pos())
                 for move in self.move:
-                    for enemy in self.enemy:
-                        if enemy.rect.x == move.rect.x and enemy.rect.y == move.rect.y:
-                            self.move.remove(move)
+                    for en in self.enemy:
+                        for enemy in en:
+                            if enemy.rect.x == move.rect.x and enemy.rect.y == move.rect.y:
+                                self.move.remove(move)
                     display.blit(move.image, camera.apply(move))
                     move.update(pygame.mouse.get_pos())
                 self.flag = True if not self.move else False
-                for enemy in self.enemy:
-                    if abs(enemy.rect.x - self.cam.rect.x) < 1400 and abs(enemy.rect.y - self.cam.rect.y) < 900:
-                        display.blit(enemy.image, camera.apply(enemy))
+                for en in self.enemy:
+                    for enemy in en:
+                        if abs(enemy.rect.x - self.cam.rect.x) < 1400 and abs(enemy.rect.y - self.cam.rect.y) < 900:
+                            display.blit(enemy.image, camera.apply(enemy))
                 display.blit(self.hero.image, camera.apply(self.hero))  # отрисовка персонажа
                 pygame.display.update()
 
@@ -629,8 +632,9 @@ def working_objects(data_saves=None):
                             move_y = self.speed
                     move_x += self.rect.x
                     move_y += self.rect.y
-                    for enemy in all_entity.enemy:
-                        flag = False if enemy.rect.x == move_x and enemy.rect.y == move_y else flag
+                    for en in all_entity.enemy:
+                        for enemy in en:
+                            flag = False if enemy.rect.x == move_x and enemy.rect.y == move_y else flag
                     if flag:
                         self.rect.x = move_x
                         self.rect.y = move_y
@@ -659,9 +663,12 @@ def working_objects(data_saves=None):
                 map_x.append(Map(x * SIZE_SELL, y * SIZE_SELL, data_sell[int(save_map[y][x])]))
             map_y.append(map_x)
         # загрузка противников на карту (Слизнь)
-        for j in data_saves[3]:
-            for i in data_saves[3].get(j):
-                enemy_list.append(Enemy(int(i), int(j), *enemy_various[0]))
+        for num in data_saves[3]:
+            enemy_class = []
+            for j in num:
+                for i in num.get(j):
+                    enemy_class.append(Enemy(int(i), int(j), *enemy_various[data_saves[3].index(num)]))
+            enemy_list.append(enemy_class)
         all_entity = Updating(map_y,
                               Hero(*data_saves[1]),
                               Cums(*data_saves[2]),
@@ -670,14 +677,16 @@ def working_objects(data_saves=None):
         # Создание и сохранение карты
         save_map = []
         map_y = []
-        enemy_list = []
+        # (Слизнь, )
+        enemy_list = [[] for _ in range(len(enemy_various))]
         for y in range(QUANTITY_SELL[1]):
             save_map_x = ''
             map_x = []
             for x in range(QUANTITY_SELL[0]):
                 # добавление разных противников на карту (Слизнь)
-                if (random.randint(0, 50) == 1) and ((y < 50 or y > 52) and (x < 49 or x > 53)):
-                    enemy_list.append(Enemy(x * SIZE_SELL, y * SIZE_SELL, *enemy_various[0]))
+                for num in range(len(enemy_various)):
+                    if (random.randint(0, 50) == 1) and ((y < 50 or y > 52) and (x < 49 or x > 53)):
+                        enemy_list[num].append(Enemy(x * SIZE_SELL, y * SIZE_SELL, *enemy_various[num]))
                 if y == 51 and (x == 50 or x == 51):
                     graphic_cell = data_sell[0]
                 else:
@@ -708,13 +717,14 @@ def save_game():
                      person.personage.belt, person.personage.pockets]
         data_t[2] = [all_entity.hero.rect.x, all_entity.hero.rect.y]
         data_t[3] = [all_entity.cam.rect.x, all_entity.cam.rect.y]
-        enemy = {'slime': {}}
-        for num in enemy:
-            for i in all_entity.enemy:
-                if enemy.get(i.rect.y) is None:
-                    enemy[num].update({i.rect.y: [i.rect.x]})
+        # Слизни,
+        enemy = [{} for _ in range(len(enemy_various))]
+        for i in all_entity.enemy:
+            for en in i:
+                if enemy[all_entity.enemy.index(i)].get(en.rect.y) is None:
+                    enemy[all_entity.enemy.index(i)].update({en.rect.y: [en.rect.x]})
                 else:
-                    enemy[num][i.rect.y].append(i.rect.x)
+                    enemy[all_entity.enemy.index(i)][en.rect.y].append(en.rect.x)
         data_t[4] = enemy
         data_t[5] = motion
         # сохранение или замена
