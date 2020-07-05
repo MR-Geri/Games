@@ -51,8 +51,8 @@ data_sell_image = [pygame.image.load(f'../Data/data_sell/cell.jpg'),
                    pygame.image.load(f'../Data/data_sell/cell_3.jpg'),
                    pygame.image.load(f'../Data/data_sell/cell_4.jpg')]
 # image, speed, vision, radius_safety, random_move, hp, dmg, drop_item_chance, drop_item
-enemy_various = [[pygame.image.load("../Data/drawing/slime.png"), 120, 4, 1, (0, 5), 50, 45, (0, 3),
-                  [CANNED]]]
+enemy_various = [[pygame.image.load("../Data/drawing/slime.png"), 120, 4, 1, (0, 5), 50, 45, (0, 5), [CANNED]],
+                 [pygame.image.load("../Data/drawing/stone.png"), 120, 2, 1, (0, 3), 200, 50, (0, 3), [CANNED]]]
 # Кнопки
 button_left_click = False
 left_click = False
@@ -212,6 +212,7 @@ class Inventory:
         # Проверка количества урона у персонажа, если оружие в руках
 
     def item_add(self, item):
+        print('добавляем', item)
         for name_item in ITEMS:
             if item in name_item:
                 name = ITEMS_Name[ITEMS.index(name_item)]
@@ -219,13 +220,20 @@ class Inventory:
         if name == 'SMALL_OBJECT' or name == 'CANNED':
             for sell in person.personage.pockets:
                 if sell is None:
-                    print(item, 'кинь в карманы.')
                     index = person.personage.pockets.index(sell)
                     person.personage.pockets[index] = item
                     self.invent.append(Code.items.item_add(name, *item, index, 0))
                     break
         elif name == 'AXE':
-            pass
+            if person.personage.left_arm is None:
+                person.personage.left_arm = item
+                self.invent.append(Code.items.item_add(name, *item, 0, 1))
+            elif person.personage.right_arm is None:
+                person.personage.right_arm = item
+                self.invent.append(Code.items.item_add(name, *item, 1, 1))
+            elif person.personage.back is None:
+                person.personage.back = item
+                self.invent.append(Code.items.item_add(name, *item, 3, 1))
 
     def update_invent(self):
         pers = person.personage
@@ -424,12 +432,11 @@ def working_objects(data_saves=None):
                     for x in y:
                         if abs(x.rect.x - self.cam.rect.x) < 1400 and abs(x.rect.y - self.cam.rect.y) < 900:
                             display.blit(x.image, camera.apply(x))
-                # Вывод статистики левый нижний угол
-                all_entity.print_stats()
-                #
+                # Отрисовка и обновление сундуков
                 for chest in self.chest:
-                    display.blit(chest.image, camera.apply(chest))
-                    chest.update(pygame.mouse.get_pos())
+                    if abs(chest.rect.x - self.cam.rect.x) < 1400 and abs(chest.rect.y - self.cam.rect.y) < 900:
+                        display.blit(chest.image, camera.apply(chest))
+                        chest.update(pygame.mouse.get_pos())
                 for en in self.enemy:
                     for enemy in en:
                         if enemy.hp <= 0:
@@ -450,14 +457,17 @@ def working_objects(data_saves=None):
                             self.move.remove(move)
                 # отрисовка точек
                 for move in self.move:
-                    display.blit(move.image, camera.apply(move))
-                    move.update(pygame.mouse.get_pos())
+                    if abs(move.rect.x - self.cam.rect.x) < 1400 and abs(move.rect.y - self.cam.rect.y) < 900:
+                        display.blit(move.image, camera.apply(move))
+                        move.update(pygame.mouse.get_pos())
                 self.flag = True if not self.move else False
                 for en in self.enemy:
                     for enemy in en:
                         if abs(enemy.rect.x - self.cam.rect.x) < 1400 and abs(enemy.rect.y - self.cam.rect.y) < 900:
                             display.blit(enemy.image, camera.apply(enemy))
                 display.blit(self.hero.image, camera.apply(self.hero))  # отрисовка персонажа
+                # Вывод статистики левый нижний угол
+                all_entity.print_stats()
                 pygame.display.update()
 
     class Move(pygame.sprite.Sprite):
@@ -667,7 +677,7 @@ def working_objects(data_saves=None):
             self.condition = True
             self.image = pygame.transform.scale(pygame.image.load('../Data/items/chest_close.png'),
                                                 (SIZE_SELL, SIZE_SELL))
-            self.loot = [SMALL_OBJECT[0], AXE[0]]
+            self.loot = [*SMALL_OBJECT, *AXE]
             self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
             self.last_left_click = False
 
@@ -676,10 +686,12 @@ def working_objects(data_saves=None):
             if self.condition:
                 hero_x = ((all_entity.hero.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) + 8)
                 hero_y = ((all_entity.hero.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) + 4)
-                sell_x = (hero_x + (self.rect.x - all_entity.hero.rect.x) / SIZE_SELL) * SIZE_SELL
-                sell_y = (hero_y + (self.rect.y - all_entity.hero.rect.y) / SIZE_SELL) * SIZE_SELL + 60
+                x = (self.rect.x - all_entity.hero.rect.x) / SIZE_SELL
+                y = (self.rect.y - all_entity.hero.rect.y) / SIZE_SELL
+                sell_x = (hero_x + x) * SIZE_SELL
+                sell_y = (hero_y + y) * SIZE_SELL + 60
                 if sell_x < mouse[0] < sell_x + 120 and sell_y < mouse[1] < sell_y + 120 and self.last_left_click and \
-                        pygame.mouse.get_pressed()[0] == 1 and not all_entity.move:
+                        pygame.mouse.get_pressed()[0] == 1 and not all_entity.move and abs(x) <= 1 and abs(y) <= 1:
                     self.condition = False
                     self.image = pygame.transform.scale(pygame.image.load('../Data/items/chest_open.png'),
                                                         (SIZE_SELL, SIZE_SELL))
@@ -728,19 +740,20 @@ def working_objects(data_saves=None):
         # Создание и сохранение карты
         save_map = []
         map_y = []
-        # (Слизнь, )
         enemy_list = [[] for _ in range(len(enemy_various))]
         chest = []
         for y in range(QUANTITY_SELL[1]):
             save_map_x = ''
             map_x = []
             for x in range(QUANTITY_SELL[0]):
-                # добавление разных противников на карту (Слизнь)
+                # добавление разных противников на карту
                 for num in range(len(enemy_various)):
                     if (random.randint(0, 50) == 1) and ((y < 50 or y > 52) and (x < 49 or x > 53)):
                         enemy_list[num].append(Enemy(x * SIZE_SELL, y * SIZE_SELL, *enemy_various[num]))
-                    elif (random.randint(0, 10) == 1) and ((y < 50 or y > 52) and (x < 49 or x > 53)):
+                        break
+                    elif (random.randint(0, 170) == 1) and ((y < 50 or y > 52) and (x < 49 or x > 53)):
                         chest.append(Chest(x * SIZE_SELL, y * SIZE_SELL))
+                        break
                 if y == 51 and (x == 50 or x == 51):
                     graphic_cell = data_sell[0]
                 else:
