@@ -1,7 +1,7 @@
 from Code.Person import Data_pers, Action
 from Code.Graphics import blur
 import Code.items
-import Data.file_data
+from Data.file_data import *
 import math
 import json
 import pygame
@@ -52,7 +52,7 @@ data_sell_image = [pygame.image.load(f'../Data/data_sell/cell.jpg'),
                    pygame.image.load(f'../Data/data_sell/cell_4.jpg')]
 # image, speed, vision, radius_safety, random_move, hp, dmg, drop_item_chance, drop_item
 enemy_various = [[pygame.image.load("../Data/drawing/slime.png"), 120, 4, 1, (0, 5), 50, 45, (0, 3),
-                  [Data.file_data.CANNED]]]
+                  [CANNED]]]
 # Кнопки
 button_left_click = False
 left_click = False
@@ -203,13 +203,29 @@ class Inventory:
         """update_invent"""
         for y in self.start_item:
             for x in y:
-                for i in Data.file_data.ITEMS:
+                for i in ITEMS:
                     if x in i:
-                        name = Data.file_data.ITEMS_Name[Data.file_data.ITEMS.index(i)]
+                        name = ITEMS_Name[ITEMS.index(i)]
                         self.invent.append(Code.items.item_add
                                            (name, *x, y.index(x), self.start_item.index(y)))
                         break
         # Проверка количества урона у персонажа, если оружие в руках
+
+    def item_add(self, item):
+        for name_item in ITEMS:
+            if item in name_item:
+                name = ITEMS_Name[ITEMS.index(name_item)]
+                break
+        if name == 'SMALL_OBJECT' or name == 'CANNED':
+            for sell in person.personage.pockets:
+                if sell is None:
+                    print(item, 'кинь в карманы.')
+                    index = person.personage.pockets.index(sell)
+                    person.personage.pockets[index] = item
+                    self.invent.append(Code.items.item_add(name, *item, index, 0))
+                    break
+        elif name == 'AXE':
+            pass
 
     def update_invent(self):
         pers = person.personage
@@ -420,20 +436,7 @@ def working_objects(data_saves=None):
                             en.remove(enemy)
                             if random.randint(*enemy.drop_item_chance) == 1:
                                 item = random.choice(*enemy.drop_item)
-                                for i in Data.file_data.ITEMS:
-                                    if item in i:
-                                        name = Data.file_data.ITEMS_Name[Data.file_data.ITEMS.index(i)]
-                                        pockets = [[0, 0], [1, 0], [2, 0], [3, 0]]
-                                        for i in inventory.invent:
-                                            for j in pockets:
-                                                if [int(i.sell_x), int(i.sell_y)] == j:
-                                                    pockets.remove(j)
-                                        if pockets:
-                                            t = [[0, 0], [1, 0], [2, 0], [3, 0]]
-                                            temp = t.index(*pockets)
-                                            person.personage.pockets[temp] = item
-                                            print(item, 'кинь в карманы.')
-                                            inventory.invent.append(Code.items.item_add(name, *item, *pockets[0]))
+                                inventory.item_add(item)
                             print('Противник погиб.')
                         enemy.update(pygame.mouse.get_pos())
                 # Удаление точки если там кто-то есть
@@ -611,7 +614,6 @@ def working_objects(data_saves=None):
                 self.hp -= person.personage.dmg
                 print('Ход номер:', motion)
             self.last_left_click = True if pygame.mouse.get_pressed()[0] == 0 else False
-            flag = True
             move_x = 0
             move_y = 0
             # Если упал шанс на движение
@@ -643,16 +645,21 @@ def working_objects(data_saves=None):
                             move_y = self.speed
                     move_x += self.rect.x
                     move_y += self.rect.y
-                    for en in all_entity.enemy:
-                        for enemy in en:
-                            flag = False if enemy.rect.x == move_x and enemy.rect.y == move_y else flag
-                    if flag:
-                        self.rect.x = move_x
-                        self.rect.y = move_y
                 # перемещение по карте
                 else:
-                    self.rect.x += random.randint(-3, 3) * SIZE_SELL
-                    self.rect.y += random.randint(-3, 3) * SIZE_SELL
+                    move_x = self.rect.x + random.randint(-3, 3) * SIZE_SELL
+                    move_y = self.rect.y + random.randint(-3, 3) * SIZE_SELL
+                flag_move = True
+                # Проверка если кто-то стоит
+                for en in all_entity.enemy:
+                    for enemy in en:
+                        flag_move = False if enemy.rect.x == move_x and enemy.rect.y == move_y else flag_move
+                for sell in all_entity.chest:
+                    flag_move = False if sell.rect.x == move_x and sell.rect.y == move_y else flag_move
+                #
+                if flag_move:
+                    self.rect.x = move_x
+                    self.rect.y = move_y
 
     class Chest(pygame.sprite.Sprite):
         def __init__(self, x, y):
@@ -660,7 +667,7 @@ def working_objects(data_saves=None):
             self.condition = True
             self.image = pygame.transform.scale(pygame.image.load('../Data/items/chest_close.png'),
                                                 (SIZE_SELL, SIZE_SELL))
-            self.loot = []
+            self.loot = [SMALL_OBJECT[0], AXE[0]]
             self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
             self.last_left_click = False
 
@@ -669,15 +676,14 @@ def working_objects(data_saves=None):
             if self.condition:
                 hero_x = ((all_entity.hero.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) + 8)
                 hero_y = ((all_entity.hero.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) + 4)
-                x = (self.rect.x - all_entity.hero.rect.x) / SIZE_SELL
-                y = (self.rect.y - all_entity.hero.rect.y) / SIZE_SELL
-                sell_x = (hero_x + x) * SIZE_SELL
-                sell_y = (hero_y + y) * SIZE_SELL + 60
+                sell_x = (hero_x + (self.rect.x - all_entity.hero.rect.x) / SIZE_SELL) * SIZE_SELL
+                sell_y = (hero_y + (self.rect.y - all_entity.hero.rect.y) / SIZE_SELL) * SIZE_SELL + 60
                 if sell_x < mouse[0] < sell_x + 120 and sell_y < mouse[1] < sell_y + 120 and self.last_left_click and \
                         pygame.mouse.get_pressed()[0] == 1 and not all_entity.move:
                     self.condition = False
                     self.image = pygame.transform.scale(pygame.image.load('../Data/items/chest_open.png'),
                                                         (SIZE_SELL, SIZE_SELL))
+                    inventory.item_add(random.choice(self.loot))
                     print(f"Сундук открыт")
                     motion += 1
                     print('Ход номер:', motion)
