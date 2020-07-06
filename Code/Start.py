@@ -224,7 +224,7 @@ class Inventory:
                     person.personage.pockets[index] = item
                     self.invent.append(Code.items.item_add(name, *item, index, 0))
                     break
-        elif name == 'AXE':
+        elif name == 'AXE' or name == 'SWORD':
             if person.personage.left_arm is None:
                 person.personage.left_arm = item
                 self.invent.append(Code.items.item_add(name, *item, 0, 1))
@@ -298,14 +298,16 @@ class Inventory:
                                 print_text('Использовать', x + 10, y + 5)
                                 self.number_of_right_click = 0
                                 self.last_right_click = 0
-                                i.use(person.personage)
+                                dell_flag = i.use(person.personage)
                                 # Обновление статистики персонажа и обновление инвентаря
-                                for item_del in self.invent:
-                                    if item_del.sell_x == i.sell_x and item_del.sell_y == i.sell_y:
-                                        del self.invent[self.invent.index(item_del)]
-                                        inventory.open()
-                                print('Предмет использован')
-                                break
+                                if dell_flag:
+                                    for item_del in self.invent:
+                                        if item_del.sell_x == i.sell_x and item_del.sell_y == i.sell_y:
+                                            del self.invent[self.invent.index(item_del)]
+                                    print('Предмет использован')
+                                    inventory.open()
+                                    break
+                                inventory.open()
                             elif pygame.mouse.get_pressed()[0] == 1:
                                 self.number_of_right_click = 0
                                 self.last_right_click = 0
@@ -677,7 +679,7 @@ def working_objects(data_saves=None):
             self.condition = True
             self.image = pygame.transform.scale(pygame.image.load('../Data/items/chest_close.png'),
                                                 (SIZE_SELL, SIZE_SELL))
-            self.loot = [*SMALL_OBJECT, *AXE]
+            self.loot = [*SMALL_OBJECT, *AXE, *SWORD]
             self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
             self.last_left_click = False
 
@@ -1083,7 +1085,7 @@ def game():
 
 class Presets:
     def __init__(self):
-        self.preset = ['Вы - одиночка, с запасом самого необходимого, для выживания.']
+        self.preset = ['У вас базоавый набор вещей.']
 
     def one(self):
         global person, inventory
@@ -1091,6 +1093,7 @@ class Presets:
             person = Data_pers()
             print(person)
             inventory = Inventory()
+            inventory.update_invent()
             working_objects()
             save_game()
             game()

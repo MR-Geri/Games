@@ -24,6 +24,7 @@ class Items_dmg:
 
     def use(self, pers):
         print(self.name, 'юзнуть низя')
+        return False
 
 
 class Items_small_object:
@@ -47,6 +48,7 @@ class Items_small_object:
 
     def use(self, pers):
         print(self.name, 'юзнуть низя')
+        return False
 
 
 class Items_eat:
@@ -74,6 +76,7 @@ class Items_eat:
         Code.Person.Action(pers).eat(pockets[self.sell_x][2])  # прибавляем единицы из file_data
         pockets[self.sell_x] = None
         pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3] = pockets
+        return True
 
 
 def item_add(name, *arg):
@@ -81,7 +84,7 @@ def item_add(name, *arg):
         return None
     elif name == 'SMALL_OBJECT':
         return Items_small_object(*arg)
-    elif name == 'AXE':
+    elif name == 'AXE' or name == 'SWORD':
         return Items_dmg(*arg)
     elif name == 'CANNED':
         return Items_eat(*arg)

@@ -23,9 +23,10 @@ PERSON_EVENTS_PRINT = {'fracture': 'Перелом',
 """Путь к картинке, название, удобство, вместительность (!до первой запятой название сумки!)"""
 BACKPACK = [['', 'дорожная сумка, неудобная, но вместительная', 45, [15]]]
 """Путь к картинке, название, размер"""
-SMALL_OBJECT = [['flashlight.png', 'фонарик'], ['', 'спички']]
+SMALL_OBJECT = [['flashlight.png', 'фонарик'], ['matches.png', 'спички']]
 """Путь к картинке, названте, урон"""
 AXE = [['old_axe.png', 'старый, лесной топор', 25], ['new_axe.png', 'новый красивый топор', 35]]
+SWORD = [['sword.png', 'Базовый меч', 40]]
 """Путь к картинке, название, сытность"""
 CANNED = [['can_of_fish.png', 'рыбные консервы', 25], ['big_can.png', 'тушёнка', 40],
           ['small_can.png', 'куриное мясо', 30], ['salami.png', 'салями', 20]]
@@ -33,6 +34,6 @@ CANNED = [['can_of_fish.png', 'рыбные консервы', 25], ['big_can.pn
 
 """Дата, выводы"""
 
-ITEMS = [BACKPACK, SMALL_OBJECT, AXE, CANNED]
-ITEMS_Name = ['BACKPACK', 'SMALL_OBJECT', 'AXE', 'CANNED']
+ITEMS = [BACKPACK, SMALL_OBJECT, AXE, SWORD, CANNED]
+ITEMS_Name = ['BACKPACK', 'SMALL_OBJECT', 'AXE', 'SWORD', 'CANNED']
 BACKPACK_PRINT = {'дорожная сумка, неудобная, но вместительная': 'дорожной сумке'}
