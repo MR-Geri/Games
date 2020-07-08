@@ -288,14 +288,14 @@ class Inventory:
                         pygame.draw.rect(display, (48, 213, 200),
                                          (x, y, 215, 40))
                         print_text('Использовать', x + 10, y + 5)
+                        pygame.draw.rect(display, (48, 213, 200),
+                                         (x, y + 50, 215, 40))
+                        print_text('Удалить', x + 10, y + 55)
                         pygame.display.update()
                         while True:
                             if x < pygame.mouse.get_pos()[0] < x + 215 \
                                     and y < pygame.mouse.get_pos()[1] < y + 40\
                                     and pygame.mouse.get_pressed()[0] == 1:
-                                pygame.draw.rect(display, (0, 255, 255),
-                                                 (x, y, 215, 40))
-                                print_text('Использовать', x + 10, y + 5)
                                 self.number_of_right_click = 0
                                 self.last_right_click = 0
                                 all_entity.action, dell_flag = i.use(person.personage)
@@ -308,6 +308,17 @@ class Inventory:
                                     inventory.open()
                                     break
                                 inventory.open()
+                            elif x < pygame.mouse.get_pos()[0] < x + 215 \
+                                    and y + 50 < pygame.mouse.get_pos()[1] < y + 90\
+                                    and pygame.mouse.get_pressed()[0] == 1:
+                                self.number_of_right_click = 0
+                                self.last_right_click = 0
+                                for item_del in self.invent:
+                                    if item_del.sell_x == i.sell_x and item_del.sell_y == i.sell_y:
+                                        del self.invent[self.invent.index(item_del)]
+                                print('Предмет выброшен')
+                                inventory.open()
+                                break
                             elif pygame.mouse.get_pressed()[0] == 1:
                                 self.number_of_right_click = 0
                                 self.last_right_click = 0
