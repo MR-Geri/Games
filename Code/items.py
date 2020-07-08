@@ -1,5 +1,6 @@
 import pygame
 import Code.Person
+from Code.Start import *
 
 
 class Items_dmg:
@@ -28,10 +29,11 @@ class Items_dmg:
 
 
 class Items_small_object:
-    def __init__(self, way, name, x, y):
+    def __init__(self, way, name, action, x, y):
         # сначала x потом y
         self.variation_move = [[0, 0], [1, 0], [2, 0], [3, 0]]
         self.name = name
+        self.action = action
         self.image = pygame.transform.scale(pygame.image.load(f'../Data/items/{way}'), (110, 110))
         self.sell_x = x
         self.sell_y = y
@@ -47,7 +49,11 @@ class Items_small_object:
                 pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3] = pockets
 
     def use(self, pers):
-        print(self.name, 'юзнуть низя')
+        if self.action == 'fire':
+            all_entity.action = 'fire'
+            print('Спички использованы')
+        else:
+            print(self.name, 'юзнуть низя')
         return False
 
 

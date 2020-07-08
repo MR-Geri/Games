@@ -41,7 +41,7 @@ WIN_HEIGHT = 1080
 QUANTITY_SELL = (101, 101)
 SIZE_SELL = 120
 COLOR = "#888888"
-CAMS_SPEED = 10
+CAMS_SPEED = 15
 # Ячейки для карты
 data_sell = ['cell.jpg', 'cell_0.jpg', 'cell_1.jpg', 'cell_2.jpg', 'cell_3.jpg', 'cell_4.jpg']
 data_sell_image = [pygame.image.load(f'../Data/data_sell/cell.jpg'),
@@ -389,6 +389,7 @@ def working_objects(data_saves=None):
             self.enemy = [*enemy]
             self.chest = chest
             self.fire = fire
+            self.action = None
             self.invent_is_open = False
             self.flag = False
             self.eat = pygame.transform.scale(pygame.image.load('../Data/drawing/eat.png'), (30, 30))
@@ -686,11 +687,15 @@ def working_objects(data_saves=None):
                     self.rect.y = move_y
 
     class Chest(pygame.sprite.Sprite):
-        def __init__(self, x, y):
+        def __init__(self, x, y, condition=True):
             pygame.sprite.Sprite.__init__(self)
-            self.condition = True
-            self.image = pygame.transform.scale(pygame.image.load('../Data/data_sell/chest_close.png'),
-                                                (SIZE_SELL, SIZE_SELL))
+            self.condition = condition
+            if self.condition:
+                self.image = pygame.transform.scale(pygame.image.load('../Data/data_sell/chest_close.png'),
+                                                    (SIZE_SELL, SIZE_SELL))
+            else:
+                self.image = pygame.transform.scale(pygame.image.load('../Data/data_sell/chest_open.png'),
+                                                    (SIZE_SELL, SIZE_SELL))
             self.loot = [*SMALL_OBJECT, *AXE, *SWORD]
             self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
             self.last_left_click = False
@@ -716,11 +721,15 @@ def working_objects(data_saves=None):
                 self.last_left_click = True if pygame.mouse.get_pressed()[0] == 0 else False
 
     class Fire(pygame.sprite.Sprite):
-        def __init__(self, x, y):
+        def __init__(self, x, y, condition=True):
             pygame.sprite.Sprite.__init__(self)
-            self.condition = True
-            self.image = pygame.transform.scale(pygame.image.load('../Data/data_sell/firewood.png'),
-                                                (SIZE_SELL, SIZE_SELL))
+            self.condition = condition
+            if self.condition:
+                self.image = pygame.transform.scale(pygame.image.load('../Data/data_sell/firewood.png'),
+                                                    (SIZE_SELL, SIZE_SELL))
+            else:
+                self.image = pygame.transform.scale(pygame.image.load('../Data/data_sell/fire.png'),
+                                                    (SIZE_SELL, SIZE_SELL))
             self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
             self.last_left_click = False
 
@@ -772,11 +781,11 @@ def working_objects(data_saves=None):
         chest = []
         for y in data_saves[4]:
             for x in data_saves[4].get(y):
-                chest.append(Chest(int(x), int(y)))
+                chest.append(Chest(int(x[0]), int(y), x[1]))
         fire = []
         for y in data_saves[5]:
             for x in data_saves[5].get(y):
-                fire.append(Fire(int(x), int(y)))
+                fire.append(Fire(int(x[0]), int(y), x[1]))
         all_entity = Updating(map_y,
                               Hero(*data_saves[1]),
                               Cums(*data_saves[2]),
@@ -848,15 +857,15 @@ def save_game():
         chest = {}
         for i in all_entity.chest:
             if chest.get(i.rect.y) is None:
-                chest.update({i.rect.y: [i.rect.x]})
+                chest.update({i.rect.y: [[i.rect.x, i.condition]]})
             else:
-                chest[i.rect.y].append(i.rect.x)
+                chest[i.rect.y].append([i.rect.x, i.condition])
         fire = {}
-        for i in all_entity.fire:
-            if fire.get(i.rect.y) is None:
-                fire.update({i.rect.y: [i.rect.x]})
+        for f in all_entity.fire:
+            if fire.get(f.rect.y) is None:
+                fire.update({f.rect.y: [[f.rect.x, f.condition]]})
             else:
-                fire[i.rect.y].append(i.rect.x)
+                fire[f.rect.y].append([f.rect.x, f.condition])
         data_t[4] = enemy
         data_t[5] = chest
         data_t[6] = fire
