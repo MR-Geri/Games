@@ -669,7 +669,8 @@ def working_objects(data_saves=None):
                 for sell in all_entity.chest:
                     flag_move = False if sell.rect.x == move_x and sell.rect.y == move_y else flag_move
                 #
-                if flag_move:
+                if flag_move and \
+                        QUANTITY_SELL[0] * SIZE_SELL > move_x > 0 and QUANTITY_SELL[1] * SIZE_SELL > move_y > 0:
                     self.rect.x = move_x
                     self.rect.y = move_y
 
@@ -677,7 +678,7 @@ def working_objects(data_saves=None):
         def __init__(self, x, y):
             pygame.sprite.Sprite.__init__(self)
             self.condition = True
-            self.image = pygame.transform.scale(pygame.image.load('../Data/items/chest_close.png'),
+            self.image = pygame.transform.scale(pygame.image.load('../Data/data_sell/chest_close.png'),
                                                 (SIZE_SELL, SIZE_SELL))
             self.loot = [*SMALL_OBJECT, *AXE, *SWORD]
             self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
@@ -695,13 +696,22 @@ def working_objects(data_saves=None):
                 if sell_x < mouse[0] < sell_x + 120 and sell_y < mouse[1] < sell_y + 120 and self.last_left_click and \
                         pygame.mouse.get_pressed()[0] == 1 and not all_entity.move and abs(x) <= 1 and abs(y) <= 1:
                     self.condition = False
-                    self.image = pygame.transform.scale(pygame.image.load('../Data/items/chest_open.png'),
+                    self.image = pygame.transform.scale(pygame.image.load('../Data/data_sell/chest_open.png'),
                                                         (SIZE_SELL, SIZE_SELL))
                     inventory.item_add(random.choice(self.loot))
                     print(f"Сундук открыт")
                     motion += 1
                     print('Ход номер:', motion)
                 self.last_left_click = True if pygame.mouse.get_pressed()[0] == 0 else False
+
+    class Fire(pygame.sprite.Sprite):
+        def __init__(self):
+            pygame.sprite.Sprite.__init__(self)
+            self.image = pygame.transform.scale(pygame.image.load('../Data/data_sell/firewood.png'),
+                                                (SIZE_SELL, SIZE_SELL))
+            self.loot = [*SMALL_OBJECT, *AXE, *SWORD]
+            self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
+            self.last_left_click = False
 
     global save_map, camera, all_entity
     # Загрузочный экран
@@ -1089,6 +1099,7 @@ class Presets:
 
     def one(self):
         global person, inventory
+
         if person is None:
             person = Data_pers()
             print(person)
