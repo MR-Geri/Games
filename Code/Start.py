@@ -381,13 +381,14 @@ class Inventory:
 
 def working_objects(data_saves=None):
     class Updating:
-        def __init__(self, map, hero, cam, enemy, chest):
+        def __init__(self, map, hero, cam, enemy, chest, fire):
             self.map = map
             self.move = []
             self.cam = cam
             self.hero = hero
             self.enemy = [*enemy]
             self.chest = chest
+            self.fire = fire
             self.invent_is_open = False
             self.flag = False
             self.eat = pygame.transform.scale(pygame.image.load('../Data/drawing/eat.png'), (30, 30))
@@ -435,10 +436,15 @@ def working_objects(data_saves=None):
                         if abs(x.rect.x - self.cam.rect.x) < 1400 and abs(x.rect.y - self.cam.rect.y) < 900:
                             display.blit(x.image, camera.apply(x))
                 # Отрисовка и обновление сундуков
-                for chest in self.chest:
-                    if abs(chest.rect.x - self.cam.rect.x) < 1400 and abs(chest.rect.y - self.cam.rect.y) < 900:
-                        display.blit(chest.image, camera.apply(chest))
-                        chest.update(pygame.mouse.get_pos())
+                for ch in self.chest:
+                    if abs(ch.rect.x - self.cam.rect.x) < 1400 and abs(ch.rect.y - self.cam.rect.y) < 900:
+                        display.blit(ch.image, camera.apply(ch))
+                        ch.update(pygame.mouse.get_pos())
+                # Отрисовка и обновление костра
+                for f in self.fire:
+                    if abs(f.rect.x - self.cam.rect.x) < 1400 and abs(f.rect.y - self.cam.rect.y) < 900:
+                        display.blit(f.image, camera.apply(f))
+                        f.update(pygame.mouse.get_pos())
                 for en in self.enemy:
                     for enemy in en:
                         if enemy.hp <= 0:
@@ -456,6 +462,9 @@ def working_objects(data_saves=None):
                                 self.move.remove(move)
                     for ch in self.chest:
                         if ch.rect.x == move.rect.x and ch.rect.y == move.rect.y:
+                            self.move.remove(move)
+                    for f in self.fire:
+                        if f.rect.x == move.rect.x and f.rect.y == move.rect.y:
                             self.move.remove(move)
                 # отрисовка точек
                 for move in self.move:
@@ -662,12 +671,14 @@ def working_objects(data_saves=None):
                     move_x = self.rect.x + random.randint(-3, 3) * SIZE_SELL
                     move_y = self.rect.y + random.randint(-3, 3) * SIZE_SELL
                 flag_move = True
-                # Проверка если кто-то стоит
+                # Проверка если занято
                 for en in all_entity.enemy:
                     for enemy in en:
                         flag_move = False if enemy.rect.x == move_x and enemy.rect.y == move_y else flag_move
                 for sell in all_entity.chest:
                     flag_move = False if sell.rect.x == move_x and sell.rect.y == move_y else flag_move
+                for f in all_entity.fire:
+                    flag_move = False if f.rect.x == move_x and f.rect.y == move_y else flag_move
                 #
                 if flag_move and \
                         QUANTITY_SELL[0] * SIZE_SELL > move_x > 0 and QUANTITY_SELL[1] * SIZE_SELL > move_y > 0:
@@ -705,13 +716,32 @@ def working_objects(data_saves=None):
                 self.last_left_click = True if pygame.mouse.get_pressed()[0] == 0 else False
 
     class Fire(pygame.sprite.Sprite):
-        def __init__(self):
+        def __init__(self, x, y):
             pygame.sprite.Sprite.__init__(self)
+            self.condition = True
             self.image = pygame.transform.scale(pygame.image.load('../Data/data_sell/firewood.png'),
                                                 (SIZE_SELL, SIZE_SELL))
-            self.loot = [*SMALL_OBJECT, *AXE, *SWORD]
             self.rect = pygame.Rect(x, y, SIZE_SELL, SIZE_SELL)
             self.last_left_click = False
+
+        def update(self, mouse):
+            global motion
+            if self.condition:
+                hero_x = ((all_entity.hero.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) + 8)
+                hero_y = ((all_entity.hero.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) + 4)
+                x = (self.rect.x - all_entity.hero.rect.x) / SIZE_SELL
+                y = (self.rect.y - all_entity.hero.rect.y) / SIZE_SELL
+                sell_x = (hero_x + x) * SIZE_SELL
+                sell_y = (hero_y + y) * SIZE_SELL + 60
+                if sell_x < mouse[0] < sell_x + 120 and sell_y < mouse[1] < sell_y + 120 and self.last_left_click and \
+                        pygame.mouse.get_pressed()[0] == 1 and not all_entity.move and abs(x) <= 1 and abs(y) <= 1:
+                    self.condition = False
+                    self.image = pygame.transform.scale(pygame.image.load('../Data/data_sell/fire.png'),
+                                                        (SIZE_SELL, SIZE_SELL))
+                    print(f"Костёр зажёгся")
+                    motion += 1
+                    print('Ход номер:', motion)
+                self.last_left_click = True if pygame.mouse.get_pressed()[0] == 0 else False
 
     global save_map, camera, all_entity
     # Загрузочный экран
@@ -725,7 +755,6 @@ def working_objects(data_saves=None):
     if data_saves is not None:
         # Загрузка карты
         map_y = []
-        enemy_list = []
         save_map = data_saves[0]
         for y in range(QUANTITY_SELL[1]):
             map_x = []
@@ -733,6 +762,7 @@ def working_objects(data_saves=None):
                 map_x.append(Map(x * SIZE_SELL, y * SIZE_SELL, data_sell[int(save_map[y][x])]))
             map_y.append(map_x)
         # загрузка противников на карту (Слизнь)
+        enemy_list = []
         for num in data_saves[3]:
             enemy_class = []
             for j in num:
@@ -743,17 +773,23 @@ def working_objects(data_saves=None):
         for y in data_saves[4]:
             for x in data_saves[4].get(y):
                 chest.append(Chest(int(x), int(y)))
+        fire = []
+        for y in data_saves[5]:
+            for x in data_saves[5].get(y):
+                fire.append(Fire(int(x), int(y)))
         all_entity = Updating(map_y,
                               Hero(*data_saves[1]),
                               Cums(*data_saves[2]),
                               enemy_list,
-                              chest)
+                              chest,
+                              fire)
     elif data_saves is None:
         # Создание и сохранение карты
         save_map = []
         map_y = []
         enemy_list = [[] for _ in range(len(enemy_various))]
         chest = []
+        fire = []
         for y in range(QUANTITY_SELL[1]):
             save_map_x = ''
             map_x = []
@@ -763,8 +799,11 @@ def working_objects(data_saves=None):
                     if (random.randint(0, 50) == 1) and ((y < 50 or y > 52) and (x < 49 or x > 53)):
                         enemy_list[num].append(Enemy(x * SIZE_SELL, y * SIZE_SELL, *enemy_various[num]))
                         break
-                    elif (random.randint(0, 170) == 1) and ((y < 50 or y > 52) and (x < 49 or x > 53)):
+                    elif (random.randint(0, 190) == 1) and ((y < 50 or y > 52) and (x < 49 or x > 53)):
                         chest.append(Chest(x * SIZE_SELL, y * SIZE_SELL))
+                        break
+                    elif (random.randint(0, 170) == 1) and ((y < 50 or y > 52) and (x < 49 or x > 53)):
+                        fire.append(Fire(x * SIZE_SELL, y * SIZE_SELL))
                         break
                 if y == 51 and (x == 50 or x == 51):
                     graphic_cell = data_sell[0]
@@ -778,7 +817,8 @@ def working_objects(data_saves=None):
                               Hero(51 * SIZE_SELL, 51 * SIZE_SELL),
                               Cums(51 * SIZE_SELL, 51 * SIZE_SELL + SIZE_SELL // 2),
                               enemy_list,
-                              chest)
+                              chest,
+                              fire)
     camera = Camera(camera_configure, total_width, total_height)
 
 
@@ -786,7 +826,7 @@ def save_game():
     global person, save_map, flag_esc_menu
     if flag_esc_menu:
         # Карта. Персонажи. Положение картинки игрока. Положение камеры.
-        data_t = [[] for _ in range(7)]
+        data_t = [[] for _ in range(8)]
         data_t[0] = save_map
         data_t[1] = [person.personage.name, person.personage.surname, person.personage.age, person.personage.dmg,
                      list(person.personage.special), list(person.personage.skills), list(person.personage.buff),
@@ -811,9 +851,16 @@ def save_game():
                 chest.update({i.rect.y: [i.rect.x]})
             else:
                 chest[i.rect.y].append(i.rect.x)
+        fire = {}
+        for i in all_entity.fire:
+            if fire.get(i.rect.y) is None:
+                fire.update({i.rect.y: [i.rect.x]})
+            else:
+                fire[i.rect.y].append(i.rect.x)
         data_t[4] = enemy
         data_t[5] = chest
-        data_t[6] = motion
+        data_t[6] = fire
+        data_t[7] = motion
         # сохранение или замена
         try:
             data = json.load(open('../Save_Loading/save.json'))
@@ -865,11 +912,12 @@ def load_game():
             person.personage.belt = per[20]
             person.personage.pockets = per[21]
             print(person)
-            motion = int(DATA_SAVE[n][6])
+            motion = int(DATA_SAVE[n][7])
             inventory = Inventory()
             inventory.update_invent()
             # Нужно загрузить инвентарь....
-            working_objects([DATA_SAVE[n][0], DATA_SAVE[n][2], DATA_SAVE[n][3], DATA_SAVE[n][4], DATA_SAVE[n][5]])
+            working_objects([DATA_SAVE[n][0], DATA_SAVE[n][2], DATA_SAVE[n][3], DATA_SAVE[n][4], DATA_SAVE[n][5],
+                             DATA_SAVE[n][6]])
             print(f'Игра загружена.')
             game()
 
