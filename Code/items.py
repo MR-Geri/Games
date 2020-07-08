@@ -1,6 +1,5 @@
 import pygame
 import Code.Person
-from Code.Start import *
 
 
 class Items_dmg:
@@ -25,7 +24,7 @@ class Items_dmg:
 
     def use(self, pers):
         print(self.name, 'юзнуть низя')
-        return False
+        return 'false', False
 
 
 class Items_small_object:
@@ -50,11 +49,11 @@ class Items_small_object:
 
     def use(self, pers):
         if self.action == 'fire':
-            all_entity.action = 'fire'
             print('Спички использованы')
+            return 'fire', True
         else:
             print(self.name, 'юзнуть низя')
-        return False
+        return 'false', False
 
 
 class Items_eat:
@@ -82,7 +81,7 @@ class Items_eat:
         Code.Person.Action(pers).eat(pockets[self.sell_x][2])  # прибавляем единицы из file_data
         pockets[self.sell_x] = None
         pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3] = pockets
-        return True
+        return 'eat', True
 
 
 def item_add(name, *arg):

@@ -298,7 +298,7 @@ class Inventory:
                                 print_text('Использовать', x + 10, y + 5)
                                 self.number_of_right_click = 0
                                 self.last_right_click = 0
-                                dell_flag = i.use(person.personage)
+                                all_entity.action, dell_flag = i.use(person.personage)
                                 # Обновление статистики персонажа и обновление инвентаря
                                 if dell_flag:
                                     for item_del in self.invent:
@@ -503,6 +503,7 @@ def working_objects(data_saves=None):
                     cell = x + y if x == 0 or y == 0 else (x + y) / 2
                     Action(person.personage).left_hunger(math.ceil(cell))
                     # ---------------
+                    all_entity.action = None
                     all_entity.hero.rect.x = self.rect.x
                     all_entity.hero.rect.y = self.rect.y
                     all_entity.move = []
@@ -595,6 +596,9 @@ def working_objects(data_saves=None):
                                     position_y = self.rect.y + y * 120
                                     cell_move.append(Move(position_x, position_y))
                         motion += 1
+                        # голод при каждом ходе
+                        Action(person.personage).left_hunger(2)
+                        #
                         print('Ход номер:', motion)
                         all_entity.move = cell_move
                     else:
@@ -736,14 +740,10 @@ def working_objects(data_saves=None):
         def update(self, mouse):
             global motion
             if self.condition:
-                hero_x = ((all_entity.hero.rect.x / SIZE_SELL - all_entity.cam.rect.x / SIZE_SELL) + 8)
-                hero_y = ((all_entity.hero.rect.y / SIZE_SELL - all_entity.cam.rect.y / SIZE_SELL) + 4)
                 x = (self.rect.x - all_entity.hero.rect.x) / SIZE_SELL
                 y = (self.rect.y - all_entity.hero.rect.y) / SIZE_SELL
-                sell_x = (hero_x + x) * SIZE_SELL
-                sell_y = (hero_y + y) * SIZE_SELL + 60
-                if sell_x < mouse[0] < sell_x + 120 and sell_y < mouse[1] < sell_y + 120 and self.last_left_click and \
-                        pygame.mouse.get_pressed()[0] == 1 and not all_entity.move and abs(x) <= 1 and abs(y) <= 1:
+                if all_entity.action == 'fire' and not all_entity.move and abs(x) <= 1 and abs(y) <= 1:
+                    all_entity.action = None
                     self.condition = False
                     self.image = pygame.transform.scale(pygame.image.load('../Data/data_sell/fire.png'),
                                                         (SIZE_SELL, SIZE_SELL))
