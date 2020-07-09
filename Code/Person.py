@@ -175,7 +175,7 @@ class Data_pers:
         # Оружие
         self.personage.right_arm = data.AXE[0]
         # Предметы
-        self.personage.pockets[0] = data.SMALL_OBJECT[0]
+        self.personage.pockets[0] = data.SMALL_OBJECT[1]
         # Еда
         self.personage.pockets[1] = data.CANNED[2]
         self.personage.pockets[2] = data.CANNED[3]

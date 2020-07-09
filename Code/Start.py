@@ -290,7 +290,9 @@ class Inventory:
                         print_text('Использовать', x + 10, y + 5)
                         pygame.draw.rect(display, (48, 213, 200),
                                          (x, y + 50, 215, 40))
-                        print_text('Удалить', x + 10, y + 55)
+                        print_text('Выборосить', x + 10, y + 55)
+                        for text in i.text():
+                            print_text(*text)
                         pygame.display.update()
                         while True:
                             if x < pygame.mouse.get_pos()[0] < x + 215 \
@@ -304,7 +306,6 @@ class Inventory:
                                     for item_del in self.invent:
                                         if item_del.sell_x == i.sell_x and item_del.sell_y == i.sell_y:
                                             del self.invent[self.invent.index(item_del)]
-                                    print('Предмет использован')
                                     inventory.open()
                                     break
                                 inventory.open()
@@ -313,10 +314,10 @@ class Inventory:
                                     and pygame.mouse.get_pressed()[0] == 1:
                                 self.number_of_right_click = 0
                                 self.last_right_click = 0
+                                i.dell(person.personage)
                                 for item_del in self.invent:
                                     if item_del.sell_x == i.sell_x and item_del.sell_y == i.sell_y:
                                         del self.invent[self.invent.index(item_del)]
-                                print('Предмет выброшен')
                                 inventory.open()
                                 break
                             elif pygame.mouse.get_pressed()[0] == 1:
@@ -369,10 +370,8 @@ class Inventory:
                 if e.type == pygame.QUIT:
                     pygame.quit()
                     quit()
-                if e.type == pygame.KEYDOWN and e.key == pygame.K_e:
+                if e.type == pygame.KEYDOWN and (e.key == pygame.K_e or e.key == pygame.K_ESCAPE):
                     game()
-                if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
-                    esc_menu()
             inventory.mouse_click_left()
             inventory.mouse_click_right()
             # отрисовка ячеек инвентаря
