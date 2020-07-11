@@ -160,25 +160,12 @@ class Personage:
         self.number_x_y = number_x_y
         self.hunger, self.water = LIMIT_HUNGER, LIMIT_WATER
         self.hp, self.stress = LIMIT_HP, random.randint(0, 30)
-        """Инвентарь"""
-        self.head = self.body = self.legs = self.feet = None
-        self.pockets = [None, None, None, None]
-        self.left_arm, self.right_arm, self.back, self.belt = None, None, None, None
 
 
 class Data_pers:
     def __init__(self):
         """Создание наборов для персонажей"""
         self.personage = Personage()
-        #  добавление предметов в инвентарь
-        data = Data.file_data
-        # Оружие
-        self.personage.right_arm = data.AXE[0]
-        # Предметы
-        self.personage.pockets[0] = data.SMALL_OBJECT[1]
-        # Еда
-        self.personage.pockets[1] = data.CANNED[2]
-        self.personage.pockets[2] = data.CANNED[3]
 
     def info(self):
         special = 'нет' if self.personage.special == set() else \
@@ -190,29 +177,11 @@ class Data_pers:
         de_buff = 'нет' if self.personage.skills == set() else \
             '\n\t\t'.join([PERSON_EVENTS_PRINT[i] for i in list(self.personage.de_buff)])
 
-        left_arm = 'пусто' if self.personage.left_arm is None else self.personage.left_arm[1]
-        right_arm = 'пусто' if self.personage.right_arm is None else self.personage.right_arm[1]
-        back = 'пусто' if self.personage.back is None else self.personage.back[1]
-        belt = 'пусто' if self.personage.belt is None else self.personage.belt[1]
-        backpack = False
-        if type(back) == list:
-            backpack = [i[1] for i in self.personage.back[2][1:]] if back != 'пусто' else False
-            backpack = ', '.join(backpack) if backpack is not False else False
-        temp = []
-        for i in self.personage.pockets:
-            if i is not None:
-                temp.append(i[1])
-        pockets = ''.join(['пусто'] if ''.join([i for i in temp]) == '' else
-                          [', '.join([i for i in temp])])
         print(f'{self.personage.name} {self.personage.surname}:\n\tВозраст: {self.personage.age}\n\t'
               f'Здоровье: {self.personage.hp}\n\tКоличество еды: {self.personage.hunger}\n\t'
               f'Воды: {self.personage.water}\n\t'
               f'Стресс: {self.personage.stress}\n\tОсобенности:\n\t\t{special}'
-              f'\n\tУмения:\n\t\t{skills}\n\tБафы:\n\t\t{buff}\n\tДебафы:\n\t\t{de_buff}\n\t'
-              f'В левой руке {left_arm}.\n\tВ правой руке {right_arm}.'
-              f'\n\tЗа спиной {back}.\n\tНа поясе {belt}.\n\tВ карманах {pockets}.')
-        if backpack is not False:
-            print(f'\tВ {Data.file_data.BACKPACK_PRINT[back]} находятся {backpack}.')
+              f'\n\tУмения:\n\t\t{skills}\n\tБафы:\n\t\t{buff}\n\tДебафы:\n\t\t{de_buff}\n\t')
         return '---------------'
 
     def __repr__(self):

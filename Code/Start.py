@@ -1,4 +1,4 @@
-from Code.Person import Data_pers, Action
+from Code.Person import *
 from Code.Graphics import blur
 import Code.items
 from Data.file_data import *
@@ -190,91 +190,78 @@ def esc_menu():
 
 class Inventory:
     def __init__(self):
-        pers = person.personage
         self.last_left_click = 0
         self.last_right_click = 0
         self.number_of_left_click = 0
         self.number_of_right_click = 0
         self.last_sell = None
-        self.start_item = [[pers.pockets[0], pers.pockets[1], pers.pockets[2], pers.pockets[3]],
-                           [pers.left_arm, pers.right_arm, pers.belt, pers.back],
-                           [pers.head, pers.body, pers.legs, pers.feet]]
-        self.invent = []
-        """update_invent"""
-        for y in self.start_item:
-            for x in y:
-                for i in ITEMS:
-                    if x in i:
-                        name = ITEMS_Name[ITEMS.index(i)]
-                        self.invent.append(Code.items.item_add
-                                           (name, *x, y.index(x), self.start_item.index(y)))
-                        break
-        # Проверка количества урона у персонажа, если оружие в руках
+        self.name_invent = ['карман', 'карман', 'карман', 'карман',
+                            'левая рука', 'правая рука', 'пояс', 'спина',
+                            'голова', 'тело', 'ноги', 'ступни',
+                            'сумка', 'сумка', 'сумка', 'сумка',
+                            'сумка', 'сумка', 'сумка', 'сумка']
+        self.invent = [None, None, None, None,
+                       None, None, None, None,
+                       None, None, None, None]
 
     def item_add(self, item):
         print('добавляем', item)
+
         for name_item in ITEMS:
             if item in name_item:
                 name = ITEMS_Name[ITEMS.index(name_item)]
                 break
         if name == 'SMALL_OBJECT' or name == 'CANNED':
-            for sell in person.personage.pockets:
-                if sell is None:
-                    index = person.personage.pockets.index(sell)
-                    person.personage.pockets[index] = item
-                    self.invent.append(Code.items.item_add(name, *item, index, 0))
+            for index in range(4):
+                if self.invent[index] is None:
+                    self.invent[index] = Code.items.item_add(name, *item)
                     break
         elif name == 'AXE' or name == 'SWORD':
-            if person.personage.left_arm is None:
-                person.personage.left_arm = item
-                self.invent.append(Code.items.item_add(name, *item, 0, 1))
-            elif person.personage.right_arm is None:
-                person.personage.right_arm = item
-                self.invent.append(Code.items.item_add(name, *item, 1, 1))
-            elif person.personage.back is None:
-                person.personage.back = item
-                self.invent.append(Code.items.item_add(name, *item, 3, 1))
+            if self.invent[4] is None:
+                self.invent[4] = Code.items.item_add(name, *item)
+            elif self.invent[5] is None:
+                self.invent[5] = Code.items.item_add(name, *item)
+            elif self.invent[7] is None:
+                self.invent[7] = Code.items.item_add(name, *item)
 
     def update_invent(self):
         pers = person.personage
         # Проверка количества урона у персонажа, если оружие в руках
-        pers.dmg = Code.Person.DMG_START
-        for i in self.invent:
+        pers.dmg = DMG_START
+        for i in self.invent[4:6]:
             try:
                 if i.dmg is not None:
-                    if [i.sell_x, i.sell_y] == [0, 1] or [i.sell_x, i.sell_x] == [1, 1]:
-                        pers.dmg += i.dmg
+                    pers.dmg += i.dmg
             except:
                 pass
 
     def mouse_click_left(self):
+        self.last_right_click = 0
         mouse, click_left = pygame.mouse.get_pos(), pygame.mouse.get_pressed()[0]
         number_of_left_click_before = self.number_of_left_click
         self.number_of_left_click = self.number_of_left_click + 1 if click_left == 1 and self.last_left_click == 0 \
             else self.number_of_left_click
         if number_of_left_click_before + 1 == self.number_of_left_click:
             pos_cell = (mouse[0] // 120 - 3, mouse[1] // 120 - 4)
-            if self.number_of_left_click == 1:
-                for i in self.invent:
-                    self.last_sell = pos_cell if i.sell_x == pos_cell[0]\
-                                                 and i.sell_y == pos_cell[1] else self.last_sell
-                self.number_of_left_click = 0 if self.last_sell is None else self.number_of_left_click
-            elif self.number_of_left_click == 2:
-                if pos_cell != self.last_sell and self.last_sell is not None:
-                    for i in self.invent:
-                        if i.sell_x == self.last_sell[0] and i.sell_y == self.last_sell[1]:
-                            empty_sell = 0
-                            for j in self.invent:
-                                empty_sell = 1 if j.sell_x == pos_cell[0] and \
-                                                  j.sell_y == pos_cell[1] else empty_sell
-                            if empty_sell == 0:
-                                i.move(pos_cell[0], pos_cell[1], person.personage)
-                                print('Предмет перемещён')
+            if number_x_y[0] > pos_cell[0] > -1 and number_x_y[1] > pos_cell[1] > -1:
+                if self.number_of_left_click == 1:
+                    if self.invent[pos_cell[1] * 4 + pos_cell[0]] is not None:
+                        self.last_sell = self.invent[pos_cell[1] * 4 + pos_cell[0]]
+                    self.number_of_left_click = 0 if self.last_sell is None else self.number_of_left_click
+                elif self.number_of_left_click == 2:
+                    index = pos_cell[1] * 4 + pos_cell[0]
+                    if self.invent[index] is None and self.invent[self.invent.index(self.last_sell)].move(*pos_cell):
+                        self.invent[self.invent.index(self.last_sell)] = None
+                        self.invent[index] = self.last_sell
+                        print('Предмет перемещён')
+                    self.number_of_left_click, self.last_sell = 0, None
+            else:
                 self.number_of_left_click, self.last_sell = 0, None
         self.last_left_click = 0 if pygame.mouse.get_pressed()[0] == 0 else 1
         pygame.display.update()
 
     def mouse_click_right(self):
+        self.last_left_click = 0
         mouse, click_right = pygame.mouse.get_pos(), pygame.mouse.get_pressed()[2]
         number_of_right_click_before = self.number_of_right_click
         self.number_of_right_click = self.number_of_right_click + 1 \
@@ -283,7 +270,9 @@ class Inventory:
             pos_cell = (mouse[0] // 120 - 3, mouse[1] // 120 - 4)
             if self.number_of_right_click == 1:
                 for i in self.invent:
-                    if i.sell_x == pos_cell[0] and i.sell_y == pos_cell[1]:
+                    sell_x = self.invent.index(i) % 4
+                    sell_y = self.invent.index(i) // 4
+                    if sell_x == pos_cell[0] and sell_y == pos_cell[1]:
                         x, y = mouse[0] + 30, mouse[1] + 30
                         pygame.draw.rect(display, (48, 213, 200),
                                          (x, y, 215, 40))
@@ -303,9 +292,7 @@ class Inventory:
                                 all_entity.action, dell_flag = i.use(person.personage)
                                 # Обновление статистики персонажа и обновление инвентаря
                                 if dell_flag:
-                                    for item_del in self.invent:
-                                        if item_del.sell_x == i.sell_x and item_del.sell_y == i.sell_y:
-                                            del self.invent[self.invent.index(item_del)]
+                                    self.invent[self.invent.index(i)] = None
                                     inventory.open()
                                     break
                                 inventory.open()
@@ -314,10 +301,7 @@ class Inventory:
                                     and pygame.mouse.get_pressed()[0] == 1:
                                 self.number_of_right_click = 0
                                 self.last_right_click = 0
-                                i.dell(person.personage)
-                                for item_del in self.invent:
-                                    if item_del.sell_x == i.sell_x and item_del.sell_y == i.sell_y:
-                                        del self.invent[self.invent.index(item_del)]
+                                self.invent[self.invent.index(i)] = None
                                 inventory.open()
                                 break
                             elif pygame.mouse.get_pressed()[0] == 1:
@@ -383,9 +367,12 @@ class Inventory:
             all_entity.print_stats()
             item_print()
             for item in self.invent:
-                display.blit(pygame.image.load('../Data/items/item_sell.jpg'),
-                             (item.sell_x * 120 + 360, item.sell_y * 120 + 480))
-                display.blit(item.image, (item.sell_x * 120 + 365, item.sell_y * 120 + 485))
+                if item is not None:
+                    sell_x = self.invent.index(item) % 4
+                    sell_y = self.invent.index(item) // 4
+                    display.blit(pygame.image.load('../Data/items/item_sell.jpg'),
+                                 (sell_x * 120 + 360, sell_y * 120 + 480))
+                    display.blit(item.image, (sell_x * 120 + 365, sell_y * 120 + 485))
             pygame.display.update()
 
 
@@ -419,7 +406,7 @@ def working_objects(data_saves=None):
             print_text(str(person.personage.dmg), 40, 1050, font_size=20)
 
         def update(self):
-            if not Code.Person.Action(person.personage).is_live():
+            if not Action(person.personage).is_live():
                 print('Game Over')
                 ok_button = Button(w=480, h=50, x=210, y=14)
                 flag_all_false()
@@ -456,6 +443,7 @@ def working_objects(data_saves=None):
                     if abs(f.rect.x - self.cam.rect.x) < 1400 and abs(f.rect.y - self.cam.rect.y) < 900:
                         display.blit(f.image, camera.apply(f))
                         f.update(pygame.mouse.get_pos())
+                # гибель противников
                 for en in self.enemy:
                     for enemy in en:
                         if enemy.hp <= 0:
@@ -483,6 +471,7 @@ def working_objects(data_saves=None):
                         display.blit(move.image, camera.apply(move))
                         move.update(pygame.mouse.get_pos())
                 self.flag = True if not self.move else False
+                # отрисовка противников
                 for en in self.enemy:
                     for enemy in en:
                         if abs(enemy.rect.x - self.cam.rect.x) < 1400 and abs(enemy.rect.y - self.cam.rect.y) < 900:
@@ -752,15 +741,18 @@ def working_objects(data_saves=None):
             if self.condition:
                 x = (self.rect.x - all_entity.hero.rect.x) / SIZE_SELL
                 y = (self.rect.y - all_entity.hero.rect.y) / SIZE_SELL
-                if all_entity.action == 'fire' and not all_entity.move and abs(x) <= 1 and abs(y) <= 1:
+                if all_entity.action == 'fire':
                     all_entity.action = None
-                    self.condition = False
-                    self.image = pygame.transform.scale(pygame.image.load('../Data/data_sell/fire.png'),
-                                                        (SIZE_SELL, SIZE_SELL))
-                    print(f"Костёр зажёгся")
-                    motion += 1
-                    print('Ход номер:', motion)
-                self.last_left_click = True if pygame.mouse.get_pressed()[0] == 0 else False
+                    if not all_entity.move and abs(x) <= 1 and abs(y) <= 1:
+                        self.image = pygame.transform.scale(pygame.image.load('../Data/data_sell/fire.png'),
+                                                            (SIZE_SELL, SIZE_SELL))
+                        self.condition = False
+                        print(f"Костёр зажёгся")
+                        motion += 1
+                        print('Ход номер:', motion)
+                    else:
+                        print('Рядом не чего зажечь')
+                    self.last_left_click = True if pygame.mouse.get_pressed()[0] == 0 else False
 
     global save_map, camera, all_entity
     # Загрузочный экран
@@ -850,10 +842,7 @@ def save_game():
         data_t[1] = [person.personage.name, person.personage.surname, person.personage.age, person.personage.dmg,
                      list(person.personage.special), list(person.personage.skills), list(person.personage.buff),
                      list(person.personage.de_buff), person.personage.hp, person.personage.hunger,
-                     person.personage.water, person.personage.number_x_y, person.personage.stress,
-                     person.personage.head, person.personage.body, person.personage.legs, person.personage.feet,
-                     person.personage.left_arm, person.personage.right_arm, person.personage.back,
-                     person.personage.belt, person.personage.pockets]
+                     person.personage.water, person.personage.number_x_y, person.personage.stress]
         data_t[2] = [all_entity.hero.rect.x, all_entity.hero.rect.y]
         data_t[3] = [all_entity.cam.rect.x, all_entity.cam.rect.y]
         # Слизни,
@@ -921,15 +910,6 @@ def load_game():
             person.personage.hunger, person.personage.water = per[9], per[10]
             person.personage.number_x_y = per[11]
             person.personage.stress = per[12]
-            person.personage.head = per[13]
-            person.personage.body = per[14]
-            person.personage.legs = per[15]
-            person.personage.feet = per[16]
-            person.personage.left_arm = per[17]
-            person.personage.right_arm = per[18]
-            person.personage.back = per[19]
-            person.personage.belt = per[20]
-            person.personage.pockets = per[21]
             print(person)
             motion = int(DATA_SAVE[n][7])
             inventory = Inventory()
@@ -1171,6 +1151,10 @@ class Presets:
             person = Data_pers()
             print(person)
             inventory = Inventory()
+            inventory.item_add(AXE[0])
+            inventory.item_add(CANNED[2])
+            inventory.item_add(CANNED[3])
+            inventory.item_add(SMALL_OBJECT[1])
             inventory.update_invent()
             working_objects()
             save_game()
