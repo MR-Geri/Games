@@ -3,8 +3,10 @@ import Code.Person
 
 
 class Items_dmg:
-    def __init__(self, way, name, dmg):
+    def __init__(self, data, index, way, name, dmg):
         # сначала x потом y
+        self.data = data
+        self.index = index
         self.variation_move = [[0, 1], [1, 1], [3, 1]]
         self.name = name
         self.dmg = dmg
@@ -25,8 +27,10 @@ class Items_dmg:
 
 
 class Items_small_object:
-    def __init__(self, way, name, action):
+    def __init__(self, data, index, way, name, action):
         # сначала x потом y
+        self.data = data
+        self.index = index
         self.print_text = {'fire': 'можно что-то поджечь'}
         self.variation_move = [[0, 0], [1, 0], [2, 0], [3, 0]]
         self.name = name
@@ -51,8 +55,10 @@ class Items_small_object:
 
 
 class Items_eat:
-    def __init__(self, way, name, hunger):
+    def __init__(self, data, index, way, name, hunger):
         # сначала x потом y
+        self.data = data
+        self.index = index
         self.variation_move = [[0, 0], [1, 0], [2, 0], [3, 0]]
         self.name = name
         self.hunger = hunger
@@ -72,13 +78,13 @@ class Items_eat:
         return [['Питательность:', 860, 260], [f'{self.hunger}', 1100, 260]]
 
 
-def item_add(name, *arg):
+def item_add(name, index, *arg):
     if name == 'BACKPACK':
         return None
     elif name == 'SMALL_OBJECT':
-        return Items_small_object(*arg)
+        return Items_small_object(name, index, *arg)
     elif name == 'AXE' or name == 'SWORD':
-        return Items_dmg(*arg)
+        return Items_dmg(name, index, *arg)
     elif name == 'CANNED':
-        return Items_eat(*arg)
+        return Items_eat(name, index, *arg)
 

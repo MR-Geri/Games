@@ -206,23 +206,32 @@ class Inventory:
 
     def item_add(self, item):
         print('добавляем', item)
-
         for name_item in ITEMS:
             if item in name_item:
                 name = ITEMS_Name[ITEMS.index(name_item)]
+                if name == 'BACKPACK':
+                    ind = BACKPACK.index(item)
+                elif name == 'SMALL_OBJECT':
+                    ind = SMALL_OBJECT.index(item)
+                elif name == 'AXE':
+                    ind = AXE.index(item)
+                elif name == 'SWORD':
+                    ind = SWORD.index(item)
+                elif name == 'CANNED':
+                    ind = CANNED.index(item)
                 break
         if name == 'SMALL_OBJECT' or name == 'CANNED':
             for index in range(4):
                 if self.invent[index] is None:
-                    self.invent[index] = Code.items.item_add(name, *item)
+                    self.invent[index] = Code.items.item_add(name, ind, *item)
                     break
         elif name == 'AXE' or name == 'SWORD':
             if self.invent[4] is None:
-                self.invent[4] = Code.items.item_add(name, *item)
+                self.invent[4] = Code.items.item_add(name, ind, *item)
             elif self.invent[5] is None:
-                self.invent[5] = Code.items.item_add(name, *item)
+                self.invent[5] = Code.items.item_add(name, ind, *item)
             elif self.invent[7] is None:
-                self.invent[7] = Code.items.item_add(name, *item)
+                self.invent[7] = Code.items.item_add(name, ind, *item)
 
     def update_invent(self):
         pers = person.personage
@@ -754,7 +763,7 @@ def working_objects(data_saves=None):
                         print('Рядом не чего зажечь')
                     self.last_left_click = True if pygame.mouse.get_pressed()[0] == 0 else False
 
-    global save_map, camera, all_entity
+    global save_map, camera, all_entity, inventory
     # Загрузочный экран
     display.blit(back_menu, (0, 0))
     pygame.draw.rect(display, (212, 92, 0), (850, 510, 245, 45))
@@ -772,21 +781,36 @@ def working_objects(data_saves=None):
             for x in range(QUANTITY_SELL[0]):
                 map_x.append(Map(x * SIZE_SELL, y * SIZE_SELL, data_sell[int(save_map[y][x])]))
             map_y.append(map_x)
+        inventory = Inventory()
+        for i in data_saves[3]:
+            if i is not None:
+                if i[0] == 'BACKPACK':
+                    inventory.item_add(BACKPACK[int(i[1])])
+                elif i[0] == 'SMALL_OBJECT':
+                    inventory.item_add(SMALL_OBJECT[int(i[1])])
+                elif i[0] == 'AXE':
+                    inventory.item_add(AXE[int(i[1])])
+                elif i[0] == 'SWORD':
+                    inventory.item_add(SWORD[int(i[1])])
+                elif i[0] == 'CANNED':
+                    inventory.item_add(CANNED[int(i[1])])
+
+            # inventory.item_add()
         # загрузка противников на карту (Слизнь)
         enemy_list = []
-        for num in data_saves[3]:
+        for num in data_saves[4]:
             enemy_class = []
             for j in num:
                 for i in num.get(j):
-                    enemy_class.append(Enemy(int(i), int(j), *enemy_various[data_saves[3].index(num)]))
+                    enemy_class.append(Enemy(int(i), int(j), *enemy_various[data_saves[4].index(num)]))
             enemy_list.append(enemy_class)
         chest = []
-        for y in data_saves[4]:
-            for x in data_saves[4].get(y):
-                chest.append(Chest(int(x[0]), int(y), x[1]))
-        fire = []
         for y in data_saves[5]:
             for x in data_saves[5].get(y):
+                chest.append(Chest(int(x[0]), int(y), x[1]))
+        fire = []
+        for y in data_saves[6]:
+            for x in data_saves[6].get(y):
                 fire.append(Fire(int(x[0]), int(y), x[1]))
         all_entity = Updating(map_y,
                               Hero(*data_saves[1]),
@@ -834,10 +858,10 @@ def working_objects(data_saves=None):
 
 
 def save_game():
-    global person, save_map, flag_esc_menu
+    global person, save_map, flag_esc_menu, inventory
     if flag_esc_menu:
         # Карта. Персонажи. Положение картинки игрока. Положение камеры.
-        data_t = [[] for _ in range(8)]
+        data_t = [[] for _ in range(9)]
         data_t[0] = save_map
         data_t[1] = [person.personage.name, person.personage.surname, person.personage.age, person.personage.dmg,
                      list(person.personage.special), list(person.personage.skills), list(person.personage.buff),
@@ -845,6 +869,12 @@ def save_game():
                      person.personage.water, person.personage.number_x_y, person.personage.stress]
         data_t[2] = [all_entity.hero.rect.x, all_entity.hero.rect.y]
         data_t[3] = [all_entity.cam.rect.x, all_entity.cam.rect.y]
+        for item in inventory.invent:
+            if item is None:
+                data_t[4].append(None)
+            else:
+                print([item.data, item.index])
+                data_t[4].append([item.data, item.index])
         # Слизни,
         enemy = [{} for _ in range(len(enemy_various))]
         for i in all_entity.enemy:
@@ -865,10 +895,10 @@ def save_game():
                 fire.update({f.rect.y: [[f.rect.x, f.condition]]})
             else:
                 fire[f.rect.y].append([f.rect.x, f.condition])
-        data_t[4] = enemy
-        data_t[5] = chest
-        data_t[6] = fire
-        data_t[7] = motion
+        data_t[5] = enemy
+        data_t[6] = chest
+        data_t[7] = fire
+        data_t[8] = motion
         # сохранение или замена
         try:
             data = json.load(open('../Save_Loading/save.json'))
@@ -911,12 +941,12 @@ def load_game():
             person.personage.number_x_y = per[11]
             person.personage.stress = per[12]
             print(person)
-            motion = int(DATA_SAVE[n][7])
+            motion = int(DATA_SAVE[n][8])
             inventory = Inventory()
             inventory.update_invent()
             # Нужно загрузить инвентарь....
-            working_objects([DATA_SAVE[n][0], DATA_SAVE[n][2], DATA_SAVE[n][3], DATA_SAVE[n][4], DATA_SAVE[n][5],
-                             DATA_SAVE[n][6]])
+            working_objects([DATA_SAVE[n][0], DATA_SAVE[n][2], DATA_SAVE[n][3], DATA_SAVE[n][4],
+                             DATA_SAVE[n][5], DATA_SAVE[n][6], DATA_SAVE[n][7]])
             print(f'Игра загружена.')
             game()
 
